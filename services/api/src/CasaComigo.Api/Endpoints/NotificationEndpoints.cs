@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using CasaComigo.Api.Contracts;
 using CasaComigo.Api.Data;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CasaComigo.Api.Endpoints;
 
@@ -98,7 +99,7 @@ public static class NotificationEndpoints
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         endpoints.MapDelete("/notifications/push-subscriptions", async Task<IResult> (
-                DeletePushSubscriptionRequest request,
+                [FromBody] DeletePushSubscriptionRequest request,
                 ClaimsPrincipal user,
                 INotificationService service,
                 CancellationToken cancellationToken) =>

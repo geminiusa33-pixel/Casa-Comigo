@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Spinner } from "@fluentui/react-components";
+import { Button, Spinner } from "@fluentui/react-components";
 import { Alert24Regular } from "@fluentui/react-icons";
 import type { Session } from "@supabase/supabase-js";
 import { apiRequest } from "../api/http";
@@ -164,13 +164,12 @@ export function NotificationsBell({ session, onUnreadCountChange, onOpenNotifica
         aria-label={`Notificações${notifications.unreadCount ? `, ${notifications.unreadCount} por ler` : ""}`}
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-      >
-        {notifications.unreadCount > 0 && (
-          <Badge appearance="filled" color="danger" size="small">
-            {notifications.unreadCount > 99 ? "99+" : notifications.unreadCount}
-          </Badge>
-        )}
-      </Button>
+      />
+      {notifications.unreadCount > 0 && (
+        <span className="notifications-count" aria-hidden="true">
+          {notifications.unreadCount > 99 ? "99+" : notifications.unreadCount}
+        </span>
+      )}
       {open && (
         <section className="notifications-popover" aria-label="Notificações">
           <header>
