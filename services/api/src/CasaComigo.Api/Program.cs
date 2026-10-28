@@ -24,6 +24,8 @@ builder.Services.AddScoped<IMatchingRepository, MatchingRepository>();
 builder.Services.AddScoped<IMatchingService, MatchingService>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IProfileSafetyRepository, ProfileSafetyRepository>();
+builder.Services.AddScoped<IProfileSafetyService, ProfileSafetyService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")
@@ -76,6 +78,7 @@ api.MapAuthEndpoints();
 api.MapProfileEndpoints();
 api.MapMatchingEndpoints();
 api.MapChatEndpoints();
+api.MapProfileSafetyEndpoints();
 MapNotImplemented(api, "POST", "/matches/{matchId:guid}/visit-requests");
 MapNotImplemented(api, "GET", "/houses");
 MapNotImplemented(api, "POST", "/houses");
@@ -85,9 +88,6 @@ MapNotImplemented(api, "DELETE", "/houses/{listingId:guid}");
 MapNotImplemented(api, "GET", "/houses/favorites");
 MapNotImplemented(api, "PUT", "/houses/{listingId:guid}/favorite");
 MapNotImplemented(api, "DELETE", "/houses/{listingId:guid}/favorite");
-MapNotImplemented(api, "POST", "/profiles/{profileId:guid}/blocks");
-MapNotImplemented(api, "POST", "/profiles/{profileId:guid}/reports");
-
 app.Run();
 
 static void MapNotImplemented(RouteGroupBuilder group, string method, string route)

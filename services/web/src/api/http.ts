@@ -19,5 +19,6 @@ export async function apiRequest<T>(
     const body = await response.json().catch(() => undefined) as { detail?: string; title?: string } | undefined;
     throw new Error(body?.detail ?? body?.title ?? `Pedido à API falhou (${response.status}).`);
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }

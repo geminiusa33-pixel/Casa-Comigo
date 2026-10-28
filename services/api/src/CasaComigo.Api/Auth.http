@@ -68,3 +68,24 @@ Content-Type: application/json
 {
   "body": "Ola! Tambem procuro casa nesta zona."
 }
+
+### Block another profile; discovery and existing match conversations stop.
+POST {{baseUrl}}/api/profiles/{{otherProfileId}}/blocks
+Authorization: Bearer {{accessToken}}
+
+### List profiles blocked by the current account.
+GET {{baseUrl}}/api/profile/blocks
+Authorization: Bearer {{accessToken}}
+
+### Unblock a profile.
+DELETE {{baseUrl}}/api/profiles/{{otherProfileId}}/blocks
+Authorization: Bearer {{accessToken}}
+
+### Report a profile; repeated reports are limited to one every ten minutes.
+POST {{baseUrl}}/api/profiles/{{otherProfileId}}/reports
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": "Conteudo suspeito ou comportamento inadequado."
+}

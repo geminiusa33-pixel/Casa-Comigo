@@ -14,44 +14,72 @@ public sealed class ApiExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
-        string title;
-        string detail;
         switch (exception)
         {
             case ProfileValidationException validationException:
-                title = "Dados de perfil inválidos";
-                detail = validationException.Message;
-                break;
+                logger.LogInformation("API request rejected: {Title}", "Dados de perfil inválidos");
+                await WriteProblemDetailsAsync(
+                    httpContext,
+                    StatusCodes.Status400BadRequest,
+                    "Dados de perfil inválidos",
+                    validationException.Message,
+                    cancellationToken);
+                return true;
             case BadHttpRequestException:
-                title = "Pedido inválido";
-                detail = "O corpo do pedido está malformado ou incompleto.";
-                break;
+                logger.LogInformation("Malformed API request rejected for {Path}", httpContext.Request.Path);
+                await WriteProblemDetailsAsync(
+                    httpContext,
+                    StatusCodes.Status400BadRequest,
+                    "Pedido inválido",
+                    "O corpo do pedido está malformado ou incompleto.",
+                    cancellationToken);
+                return true;
             case ChatNotFoundException:
-                logger.LogInformation("Conversation request rejected for {Path}", httpContext.Request.Path);
-                httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-                await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
-                {
-                    Type = "https://httpstatuses.com/404",
-                    Title = "Conversa não encontrada",
-                    Detail = "A conversa não existe ou não está disponível para esta conta.",
-                    Status = StatusCodes.Status404NotFound,
-                    Instance = httpContext.Request.Path
-                }, cancellationToken);
+                await WriteProblemDetailsAsync(
+                    httpContext,
+                    StatusCodes.Status404NotFound,
+                    "Conversa não encontrada",
+                    "A conversa não existe ou não está disponível para esta conta.",
+                    cancellationToken);
+                return true;
+            case ProfileSafetyNotFoundException:
+                logger.LogInformation("Profile safety request rejected for {Path}", httpContext.Request.Path);
+                await WriteProblemDetailsAsync(
+                    httpContext,
+                    StatusCodes.Status404NotFound,
+                    "Perfil não encontrado",
+                    "O perfil indicado não existe.",
+                    cancellationToken);
+                return true;
+            case ProfileSafetyConflictException conflictException:
+                logger.LogInformation("Profile safety request throttled for {Path}", httpContext.Request.Path);
+                await WriteProblemDetailsAsync(
+                    httpContext,
+                    StatusCodes.Status409Conflict,
+                    "Ação temporariamente indisponível",
+                    conflictException.Message,
+                    cancellationToken);
                 return true;
             default:
                 return false;
         }
+    }
 
-        logger.LogInformation("API request rejected: {Title}", title);
-        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-        await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
+    private static Task WriteProblemDetailsAsync(
+        HttpContext httpContext,
+        int statusCode,
+        string title,
+        string detail,
+        CancellationToken cancellationToken)
+    {
+        httpContext.Response.StatusCode = statusCode;
+        return httpContext.Response.WriteAsJsonAsync(new ProblemDetails
         {
-            Type = "https://httpstatuses.com/400",
+            Type = $"https://httpstatuses.com/{statusCode}",
             Title = title,
             Detail = detail,
-            Status = StatusCodes.Status400BadRequest,
+            Status = statusCode,
             Instance = httpContext.Request.Path
         }, cancellationToken);
-        return true;
     }
 }

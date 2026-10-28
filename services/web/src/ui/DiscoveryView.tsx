@@ -13,6 +13,7 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { apiRequest } from "../api/http";
 import type { DiscoveryProfile } from "../api/profile";
+import { ProfileSafetyActions } from "./ProfileSafetyActions";
 
 type Props = { session: Session };
 
@@ -98,6 +99,15 @@ export function DiscoveryView({ session }: Props) {
           >
             {likingId === profile.id ? "A enviar gosto…" : "Gosto"}
           </Button>
+          <ProfileSafetyActions
+            profileId={profile.id}
+            displayName={profile.displayName}
+            session={session}
+            onBlocked={() => {
+              setProfiles((current) => current.filter((candidate) => candidate.id !== profile.id));
+              setNotice(`O perfil de ${profile.displayName} foi bloqueado.`);
+            }}
+          />
         </Card>
       ))}
     </section>

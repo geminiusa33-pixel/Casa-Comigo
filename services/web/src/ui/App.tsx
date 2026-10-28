@@ -26,6 +26,7 @@ import { hasSupabasePublicConfig } from "../api/config";
 import { apiRequest } from "../api/http";
 import { supabase } from "../api/supabase";
 import { AuthPanel } from "./AuthPanel";
+import { BlockedProfiles } from "./BlockedProfiles";
 import { DiscoveryView } from "./DiscoveryView";
 import { MatchesView } from "./MatchesView";
 import { ProfileEditor } from "./ProfileEditor";
@@ -224,7 +225,12 @@ export function App() {
 
           {selected === "descobrir" && <DiscoveryView session={session} />}
           {selected === "matches" && <MatchesView session={session} />}
-          {selected === "perfil" && <ProfileEditor session={session} />}
+          {selected === "perfil" && (
+            <>
+              <ProfileEditor session={session} />
+              <BlockedProfiles session={session} />
+            </>
+          )}
           {(selected === "casas" || selected === "favoritos") && (
             <Card className={styles.profileCard}>
               <Text weight="semibold">Esta área será ligada numa próxima etapa.</Text>

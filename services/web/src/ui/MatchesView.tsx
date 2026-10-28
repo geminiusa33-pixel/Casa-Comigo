@@ -4,6 +4,7 @@ import { Avatar, Button, Card, CardHeader, MessageBar, MessageBarBody, Spinner, 
 import type { Session } from "@supabase/supabase-js";
 import { apiRequest } from "../api/http";
 import type { ChatMessage, Match } from "../api/profile";
+import { ProfileSafetyActions } from "./ProfileSafetyActions";
 
 type Props = { session: Session };
 
@@ -133,6 +134,17 @@ export function MatchesView({ session }: Props) {
                 />
                 {match.bio && <p>{match.bio}</p>}
                 <p>Interesses: {match.interests.length ? match.interests.join(", ") : "ainda não indicados"}</p>
+                <ProfileSafetyActions
+                  profileId={match.profileId}
+                  displayName={match.displayName}
+                  session={session}
+                  onBlocked={() => {
+                    setMatches((current) => current.filter((candidate) => candidate.id !== match.id));
+                    setSelectedMatchId((current) => current === match.id
+                      ? matches.find((candidate) => candidate.id !== match.id)?.id ?? ""
+                      : current);
+                  }}
+                />
               </Card>
             ))}
           </div>
