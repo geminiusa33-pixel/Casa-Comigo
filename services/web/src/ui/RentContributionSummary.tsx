@@ -1,16 +1,18 @@
 type Props = {
-  amount: number | null | undefined;
+  minimum: number | null | undefined;
+  maximum: number | null | undefined;
   label: string;
 };
 
-export function RentContributionSummary({ amount, label }: Props) {
+export function RentContributionSummary({ minimum, maximum, label }: Props) {
+  const isMissing = minimum == null || maximum == null;
   return (
     <div
-      className={`rent-contribution-summary${amount == null ? " is-unavailable" : ""}`}
-      aria-label={amount == null ? `${label}: sem valores indicados` : `${label}: ${formatAmount(amount)} por mês`}
+      className={`rent-contribution-summary${isMissing ? " is-unavailable" : ""}`}
+      aria-label={isMissing ? `${label}: escalão por indicar` : `${label}: entre ${formatAmount(minimum)} e ${formatAmount(maximum)} por mês`}
     >
       <span>{label}</span>
-      <strong>{amount == null ? "Sem valores indicados" : <>{formatAmount(amount)}<small>/mês</small></>}</strong>
+      <strong>{isMissing ? "Escalão por indicar" : <>{formatAmount(minimum)}–{formatAmount(maximum)}<small>/mês</small></>}</strong>
     </div>
   );
 }

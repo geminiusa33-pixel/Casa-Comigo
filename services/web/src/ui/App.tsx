@@ -31,6 +31,8 @@ import { MatchesView } from "./MatchesView";
 import { ProfileEditor } from "./ProfileEditor";
 import { LandingPage } from "./LandingPage";
 import { ProfileAvatar } from "./ProfileAvatar";
+import { NotificationsBell } from "./NotificationsBell";
+import type { AppNotification } from "../api/notifications";
 
 const useStyles = makeStyles({
   app: { minHeight: "100vh", color: tokens.colorNeutralForeground1 },
@@ -117,6 +119,8 @@ export function App() {
   const [apiIdentity, setApiIdentity] = useState<string | null>(null);
   const [apiError, setApiError] = useState("");
   const [ownPhotoPath, setOwnPhotoPath] = useState<string | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [notificationGroupId, setNotificationGroupId] = useState<string | null>(null);
   const currentLabel = navItems.find((item) => item.value === selected)?.label ?? "Descobrir";
   const updateOwnPhotoPath = useCallback((photoPath: string | null) => setOwnPhotoPath(photoPath), []);
 
@@ -149,6 +153,8 @@ export function App() {
       setApiIdentity(null);
       setApiError("");
       setOwnPhotoPath(null);
+      setUnreadNotifications(0);
+      setNotificationGroupId(null);
       return;
     }
 
@@ -186,6 +192,19 @@ export function App() {
     return () => controller.abort();
   }, [session?.access_token]);
 
+  useEffect(() => {
+    if (!session) return;
+    const params = new URLSearchParams(window.location.search);
+    const resourceType = params.get("openType");
+    const resourceId = params.get("openId");
+    if (!resourceId || (resourceType !== "match" && resourceType !== "group")) return;
+
+    setSelected("matches");
+    setConversationMatchId(resourceType === "match" ? resourceId : null);
+    setNotificationGroupId(resourceType === "group" ? resourceId : null);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [session?.access_token]);
+
   async function signOut() {
     if (!supabase) return;
     const { error } = await supabase.auth.signOut();
@@ -219,6 +238,15 @@ export function App() {
         </div>
         <div className={styles.topActions}>
           <Badge className="member-environment" appearance="tint" color="success">Ambiente local</Badge>
+          <NotificationsBell
+            session={session}
+            onUnreadCountChange={setUnreadNotifications}
+            onOpenNotification={(notification: AppNotification) => {
+              setSelected("matches");
+              setConversationMatchId(notification.resourceType === "match" ? notification.resourceId : null);
+              setNotificationGroupId(notification.resourceType === "group" ? notification.resourceId : null);
+            }}
+          />
           <div className="member-account">
             <ProfileAvatar name={session.user.email ?? "Utilizador"} photoPath={ownPhotoPath} size={32} />
             <Text className="member-email" size={300}>{session.user.email}</Text>
@@ -243,6 +271,7 @@ export function App() {
               selectedValue={selected}
               onTabSelect={(_, data) => {
                 setConversationMatchId(null);
+                setNotificationGroupId(null);
                 setSelected(String(data.value));
               }}
               aria-label="Navegação principal"
@@ -256,7 +285,9 @@ export function App() {
                     ? <ProfileAvatar name={session.user.email ?? "Perfil"} photoPath={ownPhotoPath} size={24} />
                     : item.icon}
                 >
-                  {item.label}
+                  {item.value === "matches" && unreadNotifications > 0
+                    ? `${item.label} · ${unreadNotifications > 99 ? "99+" : unreadNotifications}`
+                    : item.label}
                 </Tab>
               ))}
             </TabList>
@@ -272,7 +303,13 @@ export function App() {
               }}
             />
           )}
-          {selected === "matches" && <MatchesView session={session} initialMatchId={conversationMatchId} />}
+          {selected === "matches" && (
+            <MatchesView
+              session={session}
+              initialMatchId={conversationMatchId}
+              initialGroupId={notificationGroupId}
+            />
+          )}
           {selected === "perfil" && (
             <>
               <ProfileEditor session={session} onPhotoPathChange={updateOwnPhotoPath} />

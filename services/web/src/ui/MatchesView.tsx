@@ -10,9 +10,9 @@ import { ProfileAvatar } from "./ProfileAvatar";
 import { HousingGroupsPanel } from "./HousingGroupsPanel";
 import { RentContributionSummary } from "./RentContributionSummary";
 
-type Props = { session: Session; initialMatchId?: string | null };
+type Props = { session: Session; initialMatchId?: string | null; initialGroupId?: string | null };
 
-export function MatchesView({ session, initialMatchId }: Props) {
+export function MatchesView({ session, initialMatchId, initialGroupId }: Props) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -165,7 +165,8 @@ export function MatchesView({ session, initialMatchId }: Props) {
                 />
                 {match.bio && <p>{match.bio}</p>}
                 <RentContributionSummary
-                  amount={match.totalMonthlyRentContribution}
+                  minimum={match.totalMonthlyRentMinimum}
+                  maximum={match.totalMonthlyRentMaximum}
                   label="Soma mensal indicada pelo par"
                 />
                 <div className="match-area-confirmation">
@@ -264,7 +265,7 @@ export function MatchesView({ session, initialMatchId }: Props) {
         </div>
       )}
     </section>
-    <HousingGroupsPanel session={session} initialMatchId={initialMatchId} />
+    <HousingGroupsPanel session={session} initialMatchId={initialMatchId} initialGroupId={initialGroupId} />
     </>
   );
 }

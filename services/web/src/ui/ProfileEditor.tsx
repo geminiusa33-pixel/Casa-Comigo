@@ -22,6 +22,7 @@ import type { Profile } from "../api/profile";
 import { supabase } from "../api/supabase";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { getAdministrativeAreaLabel } from "./portugalAdministrativeArea";
+import { RENT_CONTRIBUTION_RANGES } from "./rentContributionRanges";
 
 const SearchAreaMap = lazy(() => import("./SearchAreaMap").then(({ SearchAreaMap: Map }) => ({ default: Map })));
 
@@ -45,7 +46,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
   const [opinions, setOpinions] = useState("");
   const [workSchedule, setWorkSchedule] = useState("");
   const [cookingHabits, setCookingHabits] = useState("");
-  const [monthlyBudget, setMonthlyBudget] = useState("");
+  const [rentContributionRange, setRentContributionRange] = useState("");
   const [leaseHolderPreference, setLeaseHolderPreference] = useState("any");
   const [billsPreference, setBillsPreference] = useState("discuss");
   const [furnishedPreference, setFurnishedPreference] = useState("any");
@@ -73,7 +74,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
     ? { latitude: Number(latitude), longitude: Number(longitude) }
     : null;
   const parsedRadius = Number(radiusKm);
-  const selectedRadius = Number.isFinite(parsedRadius) && parsedRadius >= 0.1 && parsedRadius <= 250
+  const selectedRadius = Number.isFinite(parsedRadius) && parsedRadius >= 5 && parsedRadius <= 50 && parsedRadius % 5 === 0
     ? parsedRadius
     : 25;
 
@@ -93,7 +94,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
         setOpinions(data.opinions);
         setWorkSchedule(data.workSchedule);
         setCookingHabits(data.cookingHabits);
-        setMonthlyBudget(data.monthlyBudget === null ? "" : String(data.monthlyBudget));
+        setRentContributionRange(data.rentContributionRange ?? "");
         setLeaseHolderPreference(data.leaseHolderPreference);
         setBillsPreference(data.billsPreference);
         setFurnishedPreference(data.furnishedPreference);
@@ -335,7 +336,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
           opinions,
           workSchedule,
           cookingHabits,
-          monthlyBudget: monthlyBudget.trim() === "" ? null : Number(monthlyBudget),
+          rentContributionRange,
           leaseHolderPreference,
           billsPreference,
           furnishedPreference,
@@ -479,16 +480,18 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
             </header>
             <div className="profile-soft-note">
               <span>Preferências flexíveis</span>
-              <p>Estas respostas ajudam a conversar, mas nunca impedem um match.</p>
+              <p>As preferências ajudam a conversar. O escalão de renda e a zona de procura são critérios obrigatórios.</p>
             </div>
             <div className="profile-fields-grid">
               <label className="profile-field">
-                <span>Máximo que pode contribuir para a renda por mês</span>
-                <div className="profile-money-input">
-                  <span aria-hidden="true">€</span>
-                  <Input type="number" min={0} max={100000} step="25" placeholder="Sem preferência" value={monthlyBudget} onChange={(_, data) => setMonthlyBudget(data.value)} />
-                </div>
-                <small>Limite máximo mensal por pessoa. É informativo e não impede matches.</small>
+                <span>Quanto pode contribuir para a renda por mês?</span>
+                <select value={rentContributionRange} required onChange={(event) => setRentContributionRange(event.target.value)}>
+                  <option value="" disabled>Escolha um escalão</option>
+                  {RENT_CONTRIBUTION_RANGES.map((range) => (
+                    <option key={range.value} value={range.value}>{range.label}</option>
+                  ))}
+                </select>
+                <small>Obrigatório. Só verá pessoas e grupos que escolheram o mesmo escalão.</small>
               </label>
               <label className="profile-field">
                 <span>Em nome de quem ficará o contrato?</span>
@@ -556,7 +559,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
             </header>
             <div className="profile-hard-note">
               <span>Critério essencial para um match</span>
-              <p>O centro de cada área tem de ficar dentro do raio escolhido pela outra pessoa, nos dois sentidos. É o único critério de perfil obrigatório para aparecerem um ao outro.</p>
+              <p>A zona tem de ser compatível nos dois sentidos e ambos têm de escolher o mesmo escalão de renda.</p>
             </div>
             <div className="profile-location-privacy">
               <ShieldCheckmark24Regular />
@@ -591,7 +594,11 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
               </label>
               <label className="profile-field">
                 <span>Raio de procura (km)</span>
-                <Input type="number" min={0.1} max={250} step="0.1" value={radiusKm} required onChange={(_, data) => setRadiusKm(data.value)} />
+                <select value={radiusKm} required onChange={(event) => setRadiusKm(event.target.value)}>
+                  {Array.from({ length: 10 }, (_, index) => (index + 1) * 5).map((radius) => (
+                    <option key={radius} value={radius}>{radius} km</option>
+                  ))}
+                </select>
               </label>
             </div>
           </section>

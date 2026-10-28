@@ -17,7 +17,7 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
         command.CommandText = """
             select p.id, p.display_name, p.bio, p.preferred_housemates,
                    p.gender_preference, p.has_pets, p.interests, p.opinions,
-                   p.work_schedule, p.cooking_habits, p.monthly_budget,
+                   p.work_schedule, p.cooking_habits, p.rent_contribution_range,
                    p.lease_holder_preference, p.bills_preference, p.furnished_preference,
                    p.preferred_bathrooms, p.preferred_bedrooms, p.home_type_preference,
                    p.move_in_timing, p.minimum_lease_months,
@@ -33,6 +33,10 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
             ) photo on true
             where p.id <> $1
               and p.discovery_visible
+              and p.rent_contribution_range is not null
+              and p.rent_contribution_range = (
+                  select rent_contribution_range from public.profiles where id = $1
+              )
               and public.is_area_compatible($1, p.id)
               and not exists (
                   select 1 from public.likes l
@@ -72,7 +76,7 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                 reader.GetString(7),
                 reader.GetString(8),
                 reader.GetString(9),
-                reader.IsDBNull(10) ? null : reader.GetDecimal(10),
+                reader.GetString(10),
                 reader.GetString(11),
                 reader.GetString(12),
                 reader.GetString(13),
@@ -161,11 +165,7 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                    other.has_pets, other.interests, other.opinions,
                    other.work_schedule, other.cooking_habits,
                    coalesce(sa.area_label, ''), m.created_at,
-                   other.monthly_budget,
-                   case
-                       when other.monthly_budget is null and own.monthly_budget is null then null
-                       else coalesce(other.monthly_budget, 0) + coalesce(own.monthly_budget, 0)
-                   end as total_monthly_rent_contribution,
+                   other.rent_contribution_range, own.rent_contribution_range,
                    other.lease_holder_preference,
                    other.bills_preference, other.furnished_preference,
                    other.preferred_bathrooms, other.preferred_bedrooms,
@@ -189,6 +189,8 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                   select 1 from public.housing_groups group_row
                   where group_row.origin_match_id = m.id
               )
+              and other.rent_contribution_range is not null
+              and other.rent_contribution_range = own.rent_contribution_range
             order by m.created_at desc
             """;
         command.Parameters.AddWithValue(profileId);
@@ -197,6 +199,8 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var totalRentRange = RentContributionRanges.Sum([reader.GetString(13), reader.GetString(14)])
+                ?? throw new InvalidOperationException("O match não tem escalões de renda compatíveis.");
             matches.Add(new MatchResponse(
                 reader.GetGuid(0),
                 reader.GetGuid(1),
@@ -211,8 +215,9 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                 reader.GetString(10),
                 reader.GetString(11),
                 new DateTimeOffset(DateTime.SpecifyKind(reader.GetDateTime(12), DateTimeKind.Utc)),
-                reader.IsDBNull(13) ? null : reader.GetDecimal(13),
-                reader.IsDBNull(14) ? null : reader.GetDecimal(14),
+                reader.GetString(13),
+                totalRentRange.Minimum,
+                totalRentRange.Maximum,
                 reader.GetString(15),
                 reader.GetString(16),
                 reader.GetString(17),

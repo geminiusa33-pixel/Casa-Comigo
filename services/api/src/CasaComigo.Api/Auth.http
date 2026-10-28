@@ -2,6 +2,10 @@
 @accessToken = paste-a-local-supabase-access-token-here
 @otherProfileId = replace-with-a-visible-compatible-profile-guid
 @matchId = replace-with-a-match-guid
+@notificationId = replace-with-a-notification-guid
+@pushEndpoint = replace-with-browser-push-endpoint
+@p256dh = replace-with-browser-p256dh-key
+@authKey = replace-with-browser-auth-key
 
 ### A request without a token must be rejected.
 GET {{baseUrl}}/api/auth/session
@@ -13,6 +17,42 @@ Authorization: Bearer {{accessToken}}
 ### Read your own profile and private search coordinates.
 GET {{baseUrl}}/api/profile
 Authorization: Bearer {{accessToken}}
+
+### List recent notifications
+GET {{baseUrl}}/api/notifications
+Authorization: Bearer {{accessToken}}
+
+### Mark all notifications as read
+PUT {{baseUrl}}/api/notifications/read-all
+Authorization: Bearer {{accessToken}}
+
+### Mark one notification as read
+PUT {{baseUrl}}/api/notifications/{{notificationId}}/read
+Authorization: Bearer {{accessToken}}
+
+### Get the VAPID public key needed for browser push
+GET {{baseUrl}}/api/notifications/push/vapid-public-key
+Authorization: Bearer {{accessToken}}
+
+### Register a browser push subscription
+POST {{baseUrl}}/api/notifications/push-subscriptions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "endpoint": "{{pushEndpoint}}",
+  "p256dh": "{{p256dh}}",
+  "auth": "{{authKey}}"
+}
+
+### Remove a browser push subscription
+DELETE {{baseUrl}}/api/notifications/push-subscriptions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "endpoint": "{{pushEndpoint}}"
+}
 
 ### Update your living preferences.
 PUT {{baseUrl}}/api/profile
@@ -29,7 +69,7 @@ Content-Type: application/json
   "opinions": "",
   "workSchedule": "Dias úteis",
   "cookingHabits": "Cozinho algumas vezes por semana",
-  "monthlyBudget": 650,
+  "rentContributionRange": "501-600",
   "leaseHolderPreference": "joint",
   "billsPreference": "split_equally",
   "furnishedPreference": "furnished",

@@ -22,6 +22,9 @@ public sealed class ProfileService(IProfileRepository repository) : IProfileServ
         if (request.PreferredHousemates is < 2 or > 20)
             throw new ProfileValidationException("Escolha entre 2 e 20 pessoas no total, incluindo-se a si.");
 
+        if (RentContributionRanges.GetBounds(request.RentContributionRange) is null)
+            throw new ProfileValidationException("Escolha um escalão válido para a contribuição mensal de renda.");
+
         var interests = request.Interests
             .Select(interest => interest.Trim())
             .Where(interest => interest.Length > 0)
@@ -53,6 +56,9 @@ public sealed class ProfileService(IProfileRepository repository) : IProfileServ
         if (!double.IsFinite(request.Latitude) || !double.IsFinite(request.Longitude)
             || !double.IsFinite(request.RadiusKm))
             throw new ProfileValidationException("A localização e o raio têm de ser valores numéricos válidos.");
+
+        if (request.RadiusKm < 5 || request.RadiusKm > 50 || request.RadiusKm % 5 != 0)
+            throw new ProfileValidationException("Escolha um raio entre 5 e 50 km, em intervalos de 5 km.");
 
         return repository.SaveSearchAreaAsync(
             profileId,

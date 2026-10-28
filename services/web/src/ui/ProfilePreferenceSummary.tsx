@@ -1,4 +1,5 @@
 import type { DiscoveryProfile, Match } from "../api/profile";
+import { formatRentContributionRange } from "./rentContributionRanges";
 
 type Props = {
   profile: PreferenceProfile;
@@ -14,7 +15,6 @@ type PreferenceProfile = Partial<Pick<
     | "opinions"
     | "workSchedule"
     | "cookingHabits"
-    | "monthlyBudget"
     | "leaseHolderPreference"
     | "billsPreference"
     | "furnishedPreference"
@@ -23,7 +23,7 @@ type PreferenceProfile = Partial<Pick<
     | "homeTypePreference"
     | "moveInTiming"
     | "minimumLeaseMonths"
-  >>;
+  >> & { rentContributionRange?: string | null };
 
 const genderLabels: Record<string, string> = {
   any: "Sem preferência de género",
@@ -74,6 +74,10 @@ export function ProfilePreferenceSummary({ profile, compareWith }: Props) {
   const shared = compareWith
     ? [
         ...sharedInterests.map((interest) => `Interesse em comum: ${interest}`),
+        ...(profile.rentContributionRange
+          && profile.rentContributionRange === compareWith.rentContributionRange
+          ? [`Escalão de renda: ${formatRentContributionRange(profile.rentContributionRange)}`]
+          : []),
         ...getSharedFacts(profile, compareWith),
       ]
     : [];
@@ -93,7 +97,7 @@ export function ProfilePreferenceSummary({ profile, compareWith }: Props) {
       )}
       <div className="profile-reconsider-facts">
         <h4>{compareWith ? "A conversar / reconsiderar" : "Pontos para conversar"}</h4>
-        <small>Preferências flexíveis · não impedem o match</small>
+        <small>As preferências são flexíveis; renda e zona são critérios obrigatórios.</small>
         {reconsider.length
           ? <div>{reconsider.map((fact) => <span key={fact}>{fact}</span>)}</div>
           : <p>As preferências assinaladas estão alinhadas.</p>}
@@ -106,7 +110,6 @@ const comparableFields = [
   ["preferredHousemates", "Lotação pretendida", (value: number | boolean | string) => `${value} pessoas no total`],
   ["genderPreference", "Género", (value: number | boolean | string) => genderLabels[String(value)] ?? String(value)],
   ["hasPets", "Animais", (value: number | boolean | string) => value ? "Sim" : "Não"],
-  ["monthlyBudget", "Máximo para renda", (value: number | boolean | string) => `${Number(value).toLocaleString("pt-PT")} €/mês`],
   ["leaseHolderPreference", "Contrato", (value: number | boolean | string) => leaseLabels[String(value)] ?? String(value)],
   ["billsPreference", "Despesas", (value: number | boolean | string) => billsLabels[String(value)] ?? String(value)],
   ["furnishedPreference", "Mobília", (value: number | boolean | string) => furnishedLabels[String(value)] ?? String(value)],

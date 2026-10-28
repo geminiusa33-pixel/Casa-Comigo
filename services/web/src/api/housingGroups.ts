@@ -10,7 +10,7 @@ export type HousingGroupProfile = Pick<
   | "opinions"
   | "workSchedule"
   | "cookingHabits"
-  | "monthlyBudget"
+  | "rentContributionRange"
   | "leaseHolderPreference"
   | "billsPreference"
   | "furnishedPreference"
@@ -26,7 +26,7 @@ export type HousingGroupMember = {
   displayName: string;
   photoPath: string | null;
   areaLabel: string;
-  maximumMonthlyRentContribution: number | null;
+  rentContributionRange: string | null;
   confirmedCompletion: boolean;
   profile: HousingGroupProfile;
 };
@@ -37,7 +37,7 @@ export type HousingGroupJoinRequest = {
   displayName: string;
   photoPath: string | null;
   areaLabel: string;
-  maximumMonthlyRentContribution: number | null;
+  rentContributionRange: string | null;
   approvalCount: number;
   requiredApprovals: number;
   myVote: boolean | null;
@@ -51,7 +51,8 @@ export type HousingGroup = {
   name: string;
   targetOccupants: number;
   memberCount: number;
-  totalMonthlyRentContribution: number | null;
+  totalMonthlyRentMinimum: number | null;
+  totalMonthlyRentMaximum: number | null;
   completionConfirmations: number;
   status: "open" | "completed";
   createdAt: string;

@@ -14,7 +14,7 @@ public sealed record ProfileResponse(
     string Opinions,
     string WorkSchedule,
     string CookingHabits,
-    decimal? MonthlyBudget,
+    string? RentContributionRange,
     string LeaseHolderPreference,
     string BillsPreference,
     string FurnishedPreference,
@@ -76,9 +76,9 @@ public sealed record UpdateProfileRequest
     [StringLength(500)]
     public string CookingHabits { get; init; } = "";
 
-    /// <summary>Contribuição mensal máxima pretendida em euros; não filtra matches.</summary>
-    [Range(typeof(decimal), "0", "100000")]
-    public decimal? MonthlyBudget { get; init; }
+    /// <summary>Escalão obrigatório da contribuição mensal máxima para renda.</summary>
+    [Required, RegularExpression("^(200-300|301-400|401-500|501-600)$")]
+    public required string RentContributionRange { get; init; }
 
     /// <summary>Preferência sobre quem assina o contrato; não filtra matches.</summary>
     [Required, RegularExpression("^(any|own_name|joint|other)$")]
@@ -127,8 +127,8 @@ public sealed record UpdateSearchAreaRequest
     [Range(-180, 180)]
     public required double Longitude { get; init; }
 
-    /// <summary>Raio pretendido em quilómetros, até 250 km.</summary>
-    [Range(0.1, 250)]
+    /// <summary>Raio de procura em quilómetros, em incrementos de 5 km até 50 km.</summary>
+    [Range(5, 50)]
     public required double RadiusKm { get; init; }
 
     /// <summary>Nome aproximado da cidade ou área; nunca inclui as coordenadas.</summary>
@@ -152,7 +152,7 @@ public sealed record DiscoveryProfileResponse(
     string Opinions,
     string WorkSchedule,
     string CookingHabits,
-    decimal? MonthlyBudget,
+    string RentContributionRange,
     string LeaseHolderPreference,
     string BillsPreference,
     string FurnishedPreference,

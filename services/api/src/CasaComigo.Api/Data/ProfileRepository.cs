@@ -32,7 +32,7 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
                 insert into public.profiles (
                     id, display_name, bio, preferred_housemates, gender_preference,
                     has_pets, interests, opinions, work_schedule, cooking_habits,
-                    monthly_budget, lease_holder_preference, bills_preference,
+                    rent_contribution_range, lease_holder_preference, bills_preference,
                     furnished_preference, preferred_bathrooms, preferred_bedrooms,
                     home_type_preference, move_in_timing, minimum_lease_months,
                     discovery_visible
@@ -48,7 +48,7 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
                     opinions = excluded.opinions,
                     work_schedule = excluded.work_schedule,
                     cooking_habits = excluded.cooking_habits,
-                    monthly_budget = excluded.monthly_budget,
+                    rent_contribution_range = excluded.rent_contribution_range,
                     lease_holder_preference = excluded.lease_holder_preference,
                     bills_preference = excluded.bills_preference,
                     furnished_preference = excluded.furnished_preference,
@@ -73,11 +73,7 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
             command.Parameters.AddWithValue(request.Opinions.Trim());
             command.Parameters.AddWithValue(request.WorkSchedule.Trim());
             command.Parameters.AddWithValue(request.CookingHabits.Trim());
-            command.Parameters.Add(new NpgsqlParameter
-            {
-                NpgsqlDbType = NpgsqlDbType.Numeric,
-                Value = (object?)request.MonthlyBudget ?? DBNull.Value
-            });
+            command.Parameters.AddWithValue(request.RentContributionRange);
             command.Parameters.AddWithValue(request.LeaseHolderPreference);
             command.Parameters.AddWithValue(request.BillsPreference);
             command.Parameters.AddWithValue(request.FurnishedPreference);
@@ -99,7 +95,14 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
                 Value = request.MinimumLeaseMonths is int leaseMonths ? (object)(short)leaseMonths : DBNull.Value
             });
             command.Parameters.AddWithValue(request.DiscoveryVisible);
-            await command.ExecuteNonQueryAsync(cancellationToken);
+            try
+            {
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+            catch (PostgresException exception) when (exception.SqlState == "P0001")
+            {
+                throw new ProfileValidationException(exception.MessageText);
+            }
         }
 
         return await GetAsync(profileId, cancellationToken)
@@ -159,7 +162,7 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
     private const string ProfileQuery = """
         select p.id, p.display_name, p.bio, p.preferred_housemates, p.gender_preference,
                p.has_pets, p.interests, p.opinions, p.work_schedule, p.cooking_habits,
-               p.monthly_budget, p.lease_holder_preference, p.bills_preference,
+               p.rent_contribution_range, p.lease_holder_preference, p.bills_preference,
                p.furnished_preference, p.preferred_bathrooms, p.preferred_bedrooms,
                p.home_type_preference, p.move_in_timing, p.minimum_lease_months,
                p.discovery_visible, p.updated_at, sa.latitude, sa.longitude,
@@ -203,7 +206,7 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
             reader.GetString(7),
             reader.GetString(8),
             reader.GetString(9),
-            reader.IsDBNull(10) ? null : reader.GetDecimal(10),
+            reader.IsDBNull(10) ? null : reader.GetString(10),
             reader.GetString(11),
             reader.GetString(12),
             reader.GetString(13),
@@ -213,7 +216,7 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
             reader.GetString(17),
             reader.IsDBNull(18) ? null : reader.GetInt16(18),
             reader.GetBoolean(19),
-            displayName.Length >= 2 && preferredHousemates is not null && hasArea,
+            displayName.Length >= 2 && preferredHousemates is not null && !reader.IsDBNull(10) && hasArea,
             searchArea,
             reader.IsDBNull(27) ? null : reader.GetString(27),
             ToDateTimeOffset(reader.GetDateTime(20)));

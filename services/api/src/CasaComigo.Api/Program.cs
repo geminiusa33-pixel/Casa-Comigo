@@ -5,6 +5,15 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
+using WebPush;
+
+if (args.Contains("--generate-vapid-keys", StringComparer.Ordinal))
+{
+    var vapidKeys = VapidHelper.GenerateVapidKeys();
+    Console.WriteLine($"WebPush__VapidPublicKey={vapidKeys.PublicKey}");
+    Console.WriteLine($"WebPush__VapidPrivateKey={vapidKeys.PrivateKey}");
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
@@ -31,6 +40,9 @@ builder.Services.AddScoped<IProfileSafetyRepository, ProfileSafetyRepository>();
 builder.Services.AddScoped<IProfileSafetyService, ProfileSafetyService>();
 builder.Services.AddScoped<IHousingGroupRepository, HousingGroupRepository>();
 builder.Services.AddScoped<IHousingGroupService, HousingGroupService>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHostedService<PushNotificationBackgroundService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")
@@ -85,6 +97,7 @@ api.MapMatchingEndpoints();
 api.MapChatEndpoints();
 api.MapProfileSafetyEndpoints();
 api.MapHousingGroupEndpoints();
+api.MapNotificationEndpoints();
 MapNotImplemented(api, "POST", "/matches/{matchId:guid}/visit-requests");
 MapNotImplemented(api, "GET", "/houses");
 MapNotImplemented(api, "POST", "/houses");

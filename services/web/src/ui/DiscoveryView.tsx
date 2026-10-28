@@ -32,6 +32,7 @@ import { ProfilePreferenceSummary } from "./ProfilePreferenceSummary";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProfilePhoto } from "./ProfilePhoto";
 import { RentContributionSummary } from "./RentContributionSummary";
+import { formatRentContributionRange, sumRentContributionRanges } from "./rentContributionRanges";
 
 type Props = {
   session: Session;
@@ -188,7 +189,7 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
 
       <div className="discovery-assurance">
         <ShieldCheckmark24Regular />
-        <span>O centro de cada área tem de ficar dentro do raio escolhido pela outra pessoa, nos dois sentidos. É o único critério obrigatório; a localização exata permanece privada.</span>
+        <span>A zona de procura tem de ser compatível nos dois sentidos e o escalão de renda tem de coincidir. A localização exata permanece privada.</span>
       </div>
 
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
@@ -198,7 +199,7 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
         <section className="discovery-housing-groups" aria-labelledby="discovery-groups-title">
           <div>
             <h3 id="discovery-groups-title">Grupos com lugares disponíveis</h3>
-            <p>A lotação tem de coincidir e a área tem de ser compatível com todos os membros. A entrada requer aprovação unânime.</p>
+            <p>A lotação e o escalão de renda têm de coincidir; a zona tem de ser compatível com todos. A entrada requer aprovação unânime.</p>
           </div>
           <div className="discovery-housing-groups-grid">
             {groups.map((group) => (
@@ -213,7 +214,8 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
                   <PeopleCommunity24Regular />
                 </div>
                 <RentContributionSummary
-                  amount={group.totalMonthlyRentContribution}
+                  minimum={group.totalMonthlyRentMinimum}
+                  maximum={group.totalMonthlyRentMaximum}
                   label="Soma mensal indicada pelo grupo"
                 />
                 <div className="discovery-housing-group-members">
@@ -222,7 +224,7 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
                       <ProfileAvatar name={member.displayName} photoPath={member.photoPath} />
                       <span>
                         <strong>{member.displayName}</strong>
-                        <small>{member.areaLabel} · Máximo renda: {formatMaximumRent(member.maximumMonthlyRentContribution)}</small>
+                        <small>{member.areaLabel} · {formatRentContributionRange(member.rentContributionRange)}</small>
                       </span>
                     </div>
                   ))}
@@ -313,7 +315,8 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
                   </p>
 
                   <RentContributionSummary
-                    amount={sumKnownContributions(ownProfile?.monthlyBudget, profile.monthlyBudget)}
+                    minimum={sumRentContributionRanges([ownProfile?.rentContributionRange, profile.rentContributionRange])?.minimum}
+                    maximum={sumRentContributionRanges([ownProfile?.rentContributionRange, profile.rentContributionRange])?.maximum}
                     label="Soma mensal indicada pelo par"
                   />
                   <ProfilePreferenceSummary profile={profile} compareWith={ownProfile ?? undefined} />
@@ -358,15 +361,4 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
       )}
     </section>
   );
-}
-
-function formatMaximumRent(value: number | null) {
-  return value === null
-    ? "não indicado"
-    : new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
-}
-
-function sumKnownContributions(...values: Array<number | null | undefined>) {
-  const knownValues = values.filter((value): value is number => value != null);
-  return knownValues.length ? knownValues.reduce((total, value) => total + value, 0) : null;
 }

@@ -314,6 +314,9 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                 and group_row.target_occupants = (
                     select preferred_housemates from public.profiles where id = $1
                 )
+                and (
+                    select rent_contribution_range from public.profiles where id = $1
+                ) is not null
                 and not exists (
                     select 1 from public.housing_group_members own_member
                     where own_member.group_id = group_row.id and own_member.profile_id = $1
@@ -337,6 +340,15 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                     where member.group_id = group_row.id
                       and (not public.is_area_compatible($1, member.profile_id)
                            or not public.is_area_compatible(member.profile_id, $1))
+                )
+                and not exists (
+                    select 1
+                    from public.housing_group_members member
+                    join public.profiles group_profile on group_profile.id = member.profile_id
+                    where member.group_id = group_row.id
+                      and group_profile.rent_contribution_range is distinct from (
+                          select rent_contribution_range from public.profiles where id = $1
+                      )
                 )
                 and (select count(*) from public.housing_group_members member
                      where member.group_id = group_row.id) < group_row.target_occupants
@@ -394,15 +406,15 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
         {
             var members = membersByGroup.GetValueOrDefault(group.Id) ?? [];
             var requests = requestsByGroup.GetValueOrDefault(group.Id) ?? [];
+            var totalRentRange = RentContributionRanges.Sum(members.Select(member => member.RentContributionRange));
             return new HousingGroupResponse(
                 group.Id,
                 group.OriginMatchId,
                 group.Name,
                 group.TargetOccupants,
                 members.Count,
-                members.Any(member => member.MaximumMonthlyRentContribution.HasValue)
-                    ? members.Sum(member => member.MaximumMonthlyRentContribution ?? 0)
-                    : null,
+                totalRentRange?.Minimum,
+                totalRentRange?.Maximum,
                 group.CompletionConfirmations,
                 group.Status,
                 group.CreatedAt,
@@ -420,14 +432,14 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
         await using var command = connection.CreateCommand();
         command.CommandText = """
             select member.group_id, member.profile_id, profile.display_name, photo.storage_object_path,
-                   coalesce(area.area_label, ''), profile.monthly_budget,
+                   coalesce(area.area_label, ''), profile.rent_contribution_range,
                    exists (
                        select 1 from public.housing_group_completion_votes vote
                        where vote.group_id = member.group_id and vote.profile_id = member.profile_id
                    ),
                    profile.bio, profile.preferred_housemates, profile.gender_preference,
                    profile.has_pets, profile.interests, profile.opinions, profile.work_schedule,
-                   profile.cooking_habits, profile.monthly_budget,
+                   profile.cooking_habits, profile.rent_contribution_range,
                    profile.lease_holder_preference, profile.bills_preference,
                    profile.furnished_preference, profile.preferred_bathrooms, profile.preferred_bedrooms,
                    profile.home_type_preference, profile.move_in_timing, profile.minimum_lease_months
@@ -457,7 +469,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                 reader.GetString(2),
                 reader.IsDBNull(3) ? null : reader.GetString(3),
                 reader.GetString(4),
-                reader.IsDBNull(5) ? null : reader.GetDecimal(5),
+                reader.IsDBNull(5) ? null : reader.GetString(5),
                 reader.GetBoolean(6),
                 ReadProfile(reader, 7)));
         }
@@ -474,7 +486,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
         await using var command = connection.CreateCommand();
         command.CommandText = """
             select request.group_id, request.id, requester.id, requester.display_name,
-                   photo.storage_object_path, coalesce(area.area_label, ''), requester.monthly_budget,
+                   photo.storage_object_path, coalesce(area.area_label, ''), requester.rent_contribution_range,
                    (select count(*)::integer from public.housing_group_join_votes vote
                     join public.housing_group_members member
                       on member.group_id = request.group_id and member.profile_id = vote.voter_id
@@ -486,7 +498,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                    request.created_at,
                    requester.bio, requester.preferred_housemates, requester.gender_preference,
                    requester.has_pets, requester.interests, requester.opinions, requester.work_schedule,
-                   requester.cooking_habits, requester.monthly_budget,
+                   requester.cooking_habits, requester.rent_contribution_range,
                    requester.lease_holder_preference, requester.bills_preference,
                    requester.furnished_preference, requester.preferred_bathrooms, requester.preferred_bedrooms,
                    requester.home_type_preference, requester.move_in_timing, requester.minimum_lease_months
@@ -524,7 +536,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                 reader.GetString(3),
                 reader.IsDBNull(4) ? null : reader.GetString(4),
                 reader.GetString(5),
-                reader.IsDBNull(6) ? null : reader.GetDecimal(6),
+                reader.IsDBNull(6) ? null : reader.GetString(6),
                 reader.GetInt32(7),
                 reader.GetInt32(8),
                 reader.IsDBNull(9) ? null : reader.GetBoolean(9),
@@ -561,7 +573,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
             reader.GetString(index + 5),
             reader.GetString(index + 6),
             reader.GetString(index + 7),
-            reader.IsDBNull(index + 8) ? null : reader.GetDecimal(index + 8),
+            reader.IsDBNull(index + 8) ? null : reader.GetString(index + 8),
             reader.GetString(index + 9),
             reader.GetString(index + 10),
             reader.GetString(index + 11),

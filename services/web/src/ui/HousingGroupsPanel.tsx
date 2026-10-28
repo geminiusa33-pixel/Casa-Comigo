@@ -21,11 +21,12 @@ import type { HousingGroup, HousingGroupMember, HousingGroupMessage } from "../a
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProfilePreferenceSummary } from "./ProfilePreferenceSummary";
 import { RentContributionSummary } from "./RentContributionSummary";
+import { formatRentContributionRange } from "./rentContributionRanges";
 
-type Props = { session: Session; initialMatchId?: string | null };
-type ProfileToView = Pick<HousingGroupMember, "displayName" | "photoPath" | "areaLabel" | "maximumMonthlyRentContribution" | "profile">;
+type Props = { session: Session; initialMatchId?: string | null; initialGroupId?: string | null };
+type ProfileToView = Pick<HousingGroupMember, "displayName" | "photoPath" | "areaLabel" | "rentContributionRange" | "profile">;
 
-export function HousingGroupsPanel({ session, initialMatchId }: Props) {
+export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: Props) {
   const [groups, setGroups] = useState<HousingGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [messages, setMessages] = useState<HousingGroupMessage[]>([]);
@@ -75,10 +76,14 @@ export function HousingGroupsPanel({ session, initialMatchId }: Props) {
   );
 
   useEffect(() => {
+    if (initialGroupId && groups.some((group) => group.id === initialGroupId)) {
+      setSelectedGroupId(initialGroupId);
+      return;
+    }
     if (!initialMatchId) return;
     const originatingGroup = groups.find((group) => group.originMatchId === initialMatchId);
     if (originatingGroup) setSelectedGroupId(originatingGroup.id);
-  }, [groups, initialMatchId]);
+  }, [groups, initialGroupId, initialMatchId]);
 
   useEffect(() => {
     if (!selectedGroupId) {
@@ -244,8 +249,8 @@ export function HousingGroupsPanel({ session, initialMatchId }: Props) {
                   </div>
                 </div>
                 {profileToView.profile.bio && <p>{profileToView.profile.bio}</p>}
-                <Text size={200}>Máximo para renda: {formatMaximum(profileToView.maximumMonthlyRentContribution)}</Text>
-                <ProfilePreferenceSummary profile={{ ...profileToView.profile, monthlyBudget: null }} />
+                <Text size={200}>Escalão de renda: {formatRentContributionRange(profileToView.rentContributionRange)}</Text>
+                <ProfilePreferenceSummary profile={profileToView.profile} />
               </DialogContent>
             )}
             <DialogActions>
@@ -289,7 +294,8 @@ export function HousingGroupsPanel({ session, initialMatchId }: Props) {
                   </div>
                   <div style={{ marginTop: 8 }}>
                     <RentContributionSummary
-                      amount={group.totalMonthlyRentContribution}
+                      minimum={group.totalMonthlyRentMinimum}
+                      maximum={group.totalMonthlyRentMaximum}
                       label="Soma mensal indicada pelo grupo"
                     />
                   </div>
@@ -328,7 +334,7 @@ export function HousingGroupsPanel({ session, initialMatchId }: Props) {
                         <ProfileAvatar name={member.displayName} photoPath={member.photoPath} />
                         <div style={{ display: "grid" }}>
                           <Text weight="semibold">{member.displayName}</Text>
-                          <Text size={200}>{member.areaLabel} · Máximo renda: {formatMaximum(member.maximumMonthlyRentContribution)}</Text>
+                          <Text size={200}>{member.areaLabel} · {formatRentContributionRange(member.rentContributionRange)}</Text>
                         </div>
                       </button>
                     ))}
@@ -382,7 +388,7 @@ export function HousingGroupsPanel({ session, initialMatchId }: Props) {
                             <Text weight="semibold">{request.displayName} · Ver perfil</Text>
                           </button>
                           <Text as="p" size={200} style={{ margin: "3px 0 8px" }}>
-                            {request.areaLabel} · Máximo renda: {formatMaximum(request.maximumMonthlyRentContribution)} · {request.approvalCount}/{request.requiredApprovals} votos
+                            {request.areaLabel} · {formatRentContributionRange(request.rentContributionRange)} · {request.approvalCount}/{request.requiredApprovals} votos
                           </Text>
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                             <Button
@@ -457,10 +463,4 @@ export function HousingGroupsPanel({ session, initialMatchId }: Props) {
       )}
     </section>
   );
-}
-
-function formatMaximum(value: number | null) {
-  return value === null
-    ? "não indicado"
-    : new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
 }

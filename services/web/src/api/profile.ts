@@ -18,7 +18,7 @@ export type Profile = {
   opinions: string;
   workSchedule: string;
   cookingHabits: string;
-  monthlyBudget: number | null;
+  rentContributionRange: string | null;
   leaseHolderPreference: string;
   billsPreference: string;
   furnishedPreference: string;
@@ -38,6 +38,7 @@ export type DiscoveryProfile = Omit<Profile, "id" | "discoveryVisible" | "profil
   id: string;
   areaLabel: string;
   photoPath?: string | null;
+  rentContributionRange: string;
 };
 
 export type Match = {
@@ -55,8 +56,9 @@ export type Match = {
   areaLabel: string;
   matchedAt: string;
   photoPath?: string | null;
-  monthlyBudget?: number | null;
-  totalMonthlyRentContribution?: number | null;
+  rentContributionRange: string;
+  totalMonthlyRentMinimum: number;
+  totalMonthlyRentMaximum: number;
   leaseHolderPreference?: string;
   billsPreference?: string;
   furnishedPreference?: string;
