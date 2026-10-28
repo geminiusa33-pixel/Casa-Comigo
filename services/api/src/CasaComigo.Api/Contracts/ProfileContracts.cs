@@ -49,8 +49,8 @@ public sealed record UpdateProfileRequest
     [StringLength(2000)]
     public string Bio { get; init; } = "";
 
-    /// <summary>Número máximo de colegas de casa que procura.</summary>
-    [Required, Range(1, 20)]
+    /// <summary>Número total de pessoas que pretende na casa, incluindo o próprio utilizador.</summary>
+    [Required, Range(2, 20)]
     public required int PreferredHousemates { get; init; }
 
     /// <summary>Preferência de género: any, women, men ou other.</summary>

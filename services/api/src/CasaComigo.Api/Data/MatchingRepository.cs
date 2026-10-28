@@ -39,6 +39,14 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                   where l.actor_id = $1 and l.recipient_id = p.id
               )
               and not exists (
+                  select 1
+                  from public.housing_group_members candidate_member
+                  join public.housing_groups group_row on group_row.id = candidate_member.group_id
+                  join public.housing_group_members own_member on own_member.group_id = group_row.id
+                  where candidate_member.profile_id = p.id
+                    and own_member.profile_id = $1
+              )
+              and not exists (
                   select 1 from public.profile_passes pp
                   where pp.actor_id = $1
                     and pp.recipient_id = p.id
@@ -153,12 +161,18 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                    other.has_pets, other.interests, other.opinions,
                    other.work_schedule, other.cooking_habits,
                    coalesce(sa.area_label, ''), m.created_at,
-                   other.monthly_budget, other.lease_holder_preference,
+                   other.monthly_budget,
+                   case
+                       when other.monthly_budget is null and own.monthly_budget is null then null
+                       else coalesce(other.monthly_budget, 0) + coalesce(own.monthly_budget, 0)
+                   end as total_monthly_rent_contribution,
+                   other.lease_holder_preference,
                    other.bills_preference, other.furnished_preference,
                    other.preferred_bathrooms, other.preferred_bedrooms,
                    other.home_type_preference, other.move_in_timing,
                    other.minimum_lease_months, photo.storage_object_path
             from public.matches m
+            join public.profiles own on own.id = $1
             join public.profiles other on other.id =
                 case when m.profile_a_id = $1 then m.profile_b_id else m.profile_a_id end
             left join public.search_areas sa on sa.profile_id = other.id
@@ -171,6 +185,10 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
             ) photo on true
             where $1 in (m.profile_a_id, m.profile_b_id)
               and not public.is_blocked_user(m.profile_a_id, m.profile_b_id)
+              and not exists (
+                  select 1 from public.housing_groups group_row
+                  where group_row.origin_match_id = m.id
+              )
             order by m.created_at desc
             """;
         command.Parameters.AddWithValue(profileId);
@@ -194,15 +212,16 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                 reader.GetString(11),
                 new DateTimeOffset(DateTime.SpecifyKind(reader.GetDateTime(12), DateTimeKind.Utc)),
                 reader.IsDBNull(13) ? null : reader.GetDecimal(13),
-                reader.GetString(14),
+                reader.IsDBNull(14) ? null : reader.GetDecimal(14),
                 reader.GetString(15),
                 reader.GetString(16),
-                reader.IsDBNull(17) ? null : reader.GetInt16(17),
+                reader.GetString(17),
                 reader.IsDBNull(18) ? null : reader.GetInt16(18),
-                reader.GetString(19),
+                reader.IsDBNull(19) ? null : reader.GetInt16(19),
                 reader.GetString(20),
-                reader.IsDBNull(21) ? null : reader.GetInt16(21),
-                reader.IsDBNull(22) ? null : reader.GetString(22)));
+                reader.GetString(21),
+                reader.IsDBNull(22) ? null : reader.GetInt16(22),
+                reader.IsDBNull(23) ? null : reader.GetString(23)));
         }
 
         return matches;

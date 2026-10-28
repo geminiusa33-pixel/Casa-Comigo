@@ -103,10 +103,10 @@ export function ProfilePreferenceSummary({ profile, compareWith }: Props) {
 }
 
 const comparableFields = [
-  ["preferredHousemates", "Colegas", (value: number | boolean | string) => `${value} ${value === 1 ? "colega" : "colegas"}`],
+  ["preferredHousemates", "Lotação pretendida", (value: number | boolean | string) => `${value} pessoas no total`],
   ["genderPreference", "Género", (value: number | boolean | string) => genderLabels[String(value)] ?? String(value)],
   ["hasPets", "Animais", (value: number | boolean | string) => value ? "Sim" : "Não"],
-  ["monthlyBudget", "Orçamento", (value: number | boolean | string) => `${Number(value).toLocaleString("pt-PT")} €/mês`],
+  ["monthlyBudget", "Máximo para renda", (value: number | boolean | string) => `${Number(value).toLocaleString("pt-PT")} €/mês`],
   ["leaseHolderPreference", "Contrato", (value: number | boolean | string) => leaseLabels[String(value)] ?? String(value)],
   ["billsPreference", "Despesas", (value: number | boolean | string) => billsLabels[String(value)] ?? String(value)],
   ["furnishedPreference", "Mobília", (value: number | boolean | string) => furnishedLabels[String(value)] ?? String(value)],

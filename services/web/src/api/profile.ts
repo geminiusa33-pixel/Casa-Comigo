@@ -56,6 +56,7 @@ export type Match = {
   matchedAt: string;
   photoPath?: string | null;
   monthlyBudget?: number | null;
+  totalMonthlyRentContribution?: number | null;
   leaseHolderPreference?: string;
   billsPreference?: string;
   furnishedPreference?: string;

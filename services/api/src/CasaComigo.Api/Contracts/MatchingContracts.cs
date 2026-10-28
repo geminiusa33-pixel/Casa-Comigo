@@ -19,6 +19,7 @@ public sealed record MatchResponse(
     string AreaLabel,
     DateTimeOffset MatchedAt,
     decimal? MonthlyBudget,
+    decimal? TotalMonthlyRentContribution,
     string LeaseHolderPreference,
     string BillsPreference,
     string FurnishedPreference,

@@ -111,6 +111,7 @@ export function App() {
   const styles = useStyles();
   const [selected, setSelected] = useState("descobrir");
   const [session, setSession] = useState<Session | null>(null);
+  const [conversationMatchId, setConversationMatchId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authMode, setAuthMode] = useState<"landing" | "sign-in" | "sign-up">("landing");
   const [apiIdentity, setApiIdentity] = useState<string | null>(null);
@@ -240,7 +241,10 @@ export function App() {
             <TabList
               className={styles.nav}
               selectedValue={selected}
-              onTabSelect={(_, data) => setSelected(String(data.value))}
+              onTabSelect={(_, data) => {
+                setConversationMatchId(null);
+                setSelected(String(data.value));
+              }}
               aria-label="Navegação principal"
               vertical={false}
             >
@@ -258,8 +262,17 @@ export function App() {
             </TabList>
           </div>
 
-          {selected === "descobrir" && <DiscoveryView session={session} onEditProfile={() => setSelected("perfil")} />}
-          {selected === "matches" && <MatchesView session={session} />}
+          {selected === "descobrir" && (
+            <DiscoveryView
+              session={session}
+              onEditProfile={() => setSelected("perfil")}
+              onOpenConversation={(matchId) => {
+                setConversationMatchId(matchId);
+                setSelected("matches");
+              }}
+            />
+          )}
+          {selected === "matches" && <MatchesView session={session} initialMatchId={conversationMatchId} />}
           {selected === "perfil" && (
             <>
               <ProfileEditor session={session} onPhotoPathChange={updateOwnPhotoPath} />

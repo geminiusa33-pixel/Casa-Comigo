@@ -22,7 +22,7 @@ Content-Type: application/json
 {
   "displayName": "Ana",
   "bio": "Procuro uma casa tranquila.",
-  "preferredHousemates": 1,
+  "preferredHousemates": 4,
   "genderPreference": "any",
   "hasPets": false,
   "interests": ["caminhadas", "cinema"],
@@ -106,4 +106,67 @@ Content-Type: application/json
 
 {
   "reason": "Conteudo suspeito ou comportamento inadequado."
+}
+
+@groupId = replace-with-a-housing-group-guid
+@joinRequestId = replace-with-a-pending-join-request-guid
+
+### List groups you belong to, including pending join requests and votes.
+GET {{baseUrl}}/api/housing-groups
+Authorization: Bearer {{accessToken}}
+
+### Rename a group; only current members can make this change.
+PUT {{baseUrl}}/api/housing-groups/{{groupId}}/name
+Authorization: ******
+Content-Type: application/json
+
+{
+  "name": "Casa perto do centro"
+}
+
+### Leave a group; an empty group is closed automatically.
+DELETE {{baseUrl}}/api/housing-groups/{{groupId}}/members/me
+Authorization: ******
+
+### Discover open groups with available places and a mutually compatible area.
+GET {{baseUrl}}/api/housing-groups/discovery
+Authorization: Bearer {{accessToken}}
+
+### Request to join an open group; all current members must approve.
+POST {{baseUrl}}/api/housing-groups/{{groupId}}/join-requests
+Authorization: Bearer {{accessToken}}
+
+### Approve a pending join request.
+POST {{baseUrl}}/api/housing-groups/join-requests/{{joinRequestId}}/votes
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "accept": true
+}
+
+### Decline a pending join request; one negative vote closes the request.
+POST {{baseUrl}}/api/housing-groups/join-requests/{{joinRequestId}}/votes
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "accept": false
+}
+
+### Confirm that the group is complete; it closes after every member confirms.
+POST {{baseUrl}}/api/housing-groups/{{groupId}}/completion-confirmations
+Authorization: Bearer {{accessToken}}
+
+### Read the latest group messages.
+GET {{baseUrl}}/api/housing-groups/{{groupId}}/messages
+Authorization: Bearer {{accessToken}}
+
+### Send a message to the group.
+POST {{baseUrl}}/api/housing-groups/{{groupId}}/messages
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "body": "Olá! Vamos combinar uma visita em conjunto?"
 }

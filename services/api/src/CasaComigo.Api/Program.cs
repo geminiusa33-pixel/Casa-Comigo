@@ -11,13 +11,16 @@ builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 var supabaseUrl = (builder.Configuration["SUPABASE_URL"] ?? "http://127.0.0.1:54321").TrimEnd('/');
 var jwtIssuer = builder.Configuration["SUPABASE_JWT_ISSUER"];
-
-builder.Services.AddSingleton(_ =>
+var connectionString = builder.Configuration.GetConnectionString("Supabase");
+if (string.IsNullOrWhiteSpace(connectionString))
 {
-    var connectionString = builder.Configuration.GetConnectionString("Supabase")
-        ?? throw new InvalidOperationException("ConnectionStrings:Supabase tem de estar configurada.");
-    return NpgsqlDataSource.Create(connectionString);
-});
+    if (!builder.Environment.IsDevelopment())
+        throw new InvalidOperationException("ConnectionStrings:Supabase tem de estar configurada fora do ambiente Development.");
+
+    connectionString = "Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres";
+}
+
+builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IMatchingRepository, MatchingRepository>();
@@ -26,6 +29,8 @@ builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IProfileSafetyRepository, ProfileSafetyRepository>();
 builder.Services.AddScoped<IProfileSafetyService, ProfileSafetyService>();
+builder.Services.AddScoped<IHousingGroupRepository, HousingGroupRepository>();
+builder.Services.AddScoped<IHousingGroupService, HousingGroupService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")
@@ -79,6 +84,7 @@ api.MapProfileEndpoints();
 api.MapMatchingEndpoints();
 api.MapChatEndpoints();
 api.MapProfileSafetyEndpoints();
+api.MapHousingGroupEndpoints();
 MapNotImplemented(api, "POST", "/matches/{matchId:guid}/visit-requests");
 MapNotImplemented(api, "GET", "/houses");
 MapNotImplemented(api, "POST", "/houses");

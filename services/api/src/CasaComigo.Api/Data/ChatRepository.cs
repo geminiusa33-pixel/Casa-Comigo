@@ -64,6 +64,10 @@ public sealed class ChatRepository(NpgsqlDataSource dataSource) : IChatRepositor
             where m.id = $1
               and $2 in (m.profile_a_id, m.profile_b_id)
               and not public.is_blocked_user(m.profile_a_id, m.profile_b_id)
+              and not exists (
+                  select 1 from public.housing_groups group_row
+                  where group_row.origin_match_id = m.id
+              )
             returning id, sender_id, body, created_at
             """;
         command.Parameters.AddWithValue(matchId);
@@ -96,6 +100,10 @@ public sealed class ChatRepository(NpgsqlDataSource dataSource) : IChatRepositor
             where m.id = $1
               and $2 in (m.profile_a_id, m.profile_b_id)
               and not public.is_blocked_user(m.profile_a_id, m.profile_b_id)
+              and not exists (
+                  select 1 from public.housing_groups group_row
+                  where group_row.origin_match_id = m.id
+              )
             """;
         command.Parameters.AddWithValue(matchId);
         command.Parameters.AddWithValue(profileId);

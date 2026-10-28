@@ -19,6 +19,9 @@ public sealed class ProfileService(IProfileRepository repository) : IProfileServ
         if (displayName.Length < 2)
             throw new ProfileValidationException("O nome deve ter pelo menos dois caracteres.");
 
+        if (request.PreferredHousemates is < 2 or > 20)
+            throw new ProfileValidationException("Escolha entre 2 e 20 pessoas no total, incluindo-se a si.");
+
         var interests = request.Interests
             .Select(interest => interest.Trim())
             .Where(interest => interest.Length > 0)

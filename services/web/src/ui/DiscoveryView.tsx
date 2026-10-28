@@ -3,6 +3,12 @@ import {
   Badge,
   Button,
   Card,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
   MessageBar,
   MessageBarBody,
   Spinner,
@@ -11,6 +17,7 @@ import type { Session } from "@supabase/supabase-js";
 import {
   ArrowClockwise24Regular,
   Dismiss24Regular,
+  Chat24Regular,
   Heart24Regular,
   Location24Regular,
   PeopleCommunity24Regular,
@@ -19,34 +26,42 @@ import {
 } from "@fluentui/react-icons";
 import { apiRequest } from "../api/http";
 import type { DiscoveryProfile, Profile } from "../api/profile";
+import type { HousingGroup } from "../api/housingGroups";
 import { ProfileSafetyActions } from "./ProfileSafetyActions";
 import { ProfilePreferenceSummary } from "./ProfilePreferenceSummary";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProfilePhoto } from "./ProfilePhoto";
+import { RentContributionSummary } from "./RentContributionSummary";
 
 type Props = {
   session: Session;
   onEditProfile: () => void;
+  onOpenConversation: (matchId: string) => void;
 };
 
-export function DiscoveryView({ session, onEditProfile }: Props) {
+export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Props) {
   const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
   const [ownProfile, setOwnProfile] = useState<Profile | null>(null);
+  const [groups, setGroups] = useState<HousingGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingOnProfileId, setActingOnProfileId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [newMatch, setNewMatch] = useState<{ id: string; displayName: string } | null>(null);
+  const [actingOnGroupId, setActingOnGroupId] = useState<string | null>(null);
 
   const loadProfiles = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [results, currentProfile] = await Promise.all([
+      const [results, currentProfile, housingGroups] = await Promise.all([
         apiRequest<DiscoveryProfile[]>("/api/discovery/profiles", session.access_token),
         apiRequest<Profile>("/api/profile", session.access_token),
+        apiRequest<HousingGroup[]>("/api/housing-groups/discovery", session.access_token),
       ]);
       setProfiles(results);
       setOwnProfile(currentProfile);
+      setGroups(housingGroups);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível carregar a descoberta.");
     } finally {
@@ -66,9 +81,12 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
         session.access_token,
         { method: "POST" },
       );
-      setNotice(result.isMatch
-        ? `É um match! Tu e ${profile.displayName} gostaram um do outro.`
-        : `Gosto enviado a ${profile.displayName}. Se for recíproco, terão um match.`);
+      if (result.isMatch) {
+        if (!result.matchId) throw new Error("O match foi criado, mas a API não devolveu a conversa.");
+        setNewMatch({ id: result.matchId, displayName: profile.displayName });
+      } else {
+        setNotice(`Gosto enviado a ${profile.displayName}. Se for recíproco, terão um match.`);
+      }
       setProfiles((current) => current.filter((candidate) => candidate.id !== profile.id));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível registar o gosto.");
@@ -96,8 +114,61 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
     }
   }
 
+  async function requestToJoin(group: HousingGroup) {
+    setActingOnGroupId(group.id);
+    setNotice("");
+    setError("");
+    try {
+      await apiRequest<{ id: string; status: string }>(
+        `/api/housing-groups/${group.id}/join-requests`,
+        session.access_token,
+        { method: "POST" },
+      );
+      setNotice(`Pedido enviado ao grupo (${group.memberCount}/${group.targetOccupants}). A entrada depende do acordo de todos os membros.`);
+      await loadProfiles();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível pedir entrada no grupo.");
+    } finally {
+      setActingOnGroupId(null);
+    }
+  }
+
   return (
     <section className="discovery-view" aria-labelledby="discovery-section-title">
+      <Dialog
+        open={newMatch !== null}
+        onOpenChange={(_, data) => {
+          if (!data.open) setNewMatch(null);
+        }}
+      >
+        <DialogSurface className="discovery-match-dialog">
+          <DialogBody>
+            <div className="discovery-match-dialog-art" aria-hidden="true">
+              <span><Heart24Regular /></span>
+              <i><Chat24Regular /></i>
+            </div>
+            <DialogTitle className="discovery-match-dialog-title">Deu match!</DialogTitle>
+            <DialogContent className="discovery-match-dialog-content">
+              Tu e {newMatch?.displayName} têm interesse em conhecer-se. A conversa já está disponível.
+            </DialogContent>
+            <DialogActions className="discovery-match-dialog-actions">
+              <Button appearance="secondary" onClick={() => setNewMatch(null)}>
+                Continuar a descobrir
+              </Button>
+              <Button
+                appearance="primary"
+                icon={<Chat24Regular />}
+                onClick={() => {
+                  if (newMatch) onOpenConversation(newMatch.id);
+                }}
+              >
+                Ir conversar
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+
       <div className="discovery-toolbar">
         <div>
           <div className="discovery-kicker"><Sparkle24Regular /> Afinidade começa pela convivência</div>
@@ -122,6 +193,58 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
 
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {notice && <MessageBar intent="success"><MessageBarBody>{notice}</MessageBarBody></MessageBar>}
+
+      {groups.length > 0 && (
+        <section className="discovery-housing-groups" aria-labelledby="discovery-groups-title">
+          <div>
+            <h3 id="discovery-groups-title">Grupos com lugares disponíveis</h3>
+            <p>A lotação tem de coincidir e a área tem de ser compatível com todos os membros. A entrada requer aprovação unânime.</p>
+          </div>
+          <div className="discovery-housing-groups-grid">
+            {groups.map((group) => (
+              <Card key={group.id} className="discovery-housing-group-card">
+                <div className="discovery-housing-group-heading">
+                  <div>
+                    <Badge appearance="tint" color="success">Grupo aberto</Badge>
+                    <strong className="discovery-housing-group-name">{group.name}</strong>
+                    <h4>{group.memberCount}/{group.targetOccupants} pessoas</h4>
+                    <p>{group.targetOccupants - group.memberCount} lugar(es) disponível(is)</p>
+                  </div>
+                  <PeopleCommunity24Regular />
+                </div>
+                <RentContributionSummary
+                  amount={group.totalMonthlyRentContribution}
+                  label="Soma mensal indicada pelo grupo"
+                />
+                <div className="discovery-housing-group-members">
+                  {group.members.map((member) => (
+                    <div key={member.profileId}>
+                      <ProfileAvatar name={member.displayName} photoPath={member.photoPath} />
+                      <span>
+                        <strong>{member.displayName}</strong>
+                        <small>{member.areaLabel} · Máximo renda: {formatMaximumRent(member.maximumMonthlyRentContribution)}</small>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  appearance="primary"
+                  disabled={actingOnGroupId !== null || group.myJoinRequestStatus === "pending"}
+                  onClick={() => void requestToJoin(group)}
+                >
+                  {actingOnGroupId === group.id
+                    ? "A enviar pedido…"
+                    : group.myJoinRequestStatus === "pending"
+                      ? "Pedido a aguardar acordo"
+                      : group.myJoinRequestStatus === "declined"
+                        ? "Pedir novamente"
+                        : "Pedir para entrar"}
+                </Button>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {loading && (
         <div className="discovery-loading" aria-live="polite">
@@ -185,8 +308,14 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
                     <span className="discovery-profile-index">{String(index + 1).padStart(2, "0")}</span>
                   </div>
 
-                  {profile.bio && <p className="discovery-profile-bio">{profile.bio}</p>}
+                  <p className="discovery-profile-bio">
+                    {profile.bio || "Ainda não adicionou uma descrição."}
+                  </p>
 
+                  <RentContributionSummary
+                    amount={sumKnownContributions(ownProfile?.monthlyBudget, profile.monthlyBudget)}
+                    label="Soma mensal indicada pelo par"
+                  />
                   <ProfilePreferenceSummary profile={profile} compareWith={ownProfile ?? undefined} />
 
                   <div className="discovery-profile-actions">
@@ -229,4 +358,15 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
       )}
     </section>
   );
+}
+
+function formatMaximumRent(value: number | null) {
+  return value === null
+    ? "não indicado"
+    : new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+}
+
+function sumKnownContributions(...values: Array<number | null | undefined>) {
+  const knownValues = values.filter((value): value is number => value != null);
+  return knownValues.length ? knownValues.reduce((total, value) => total + value, 0) : null;
 }

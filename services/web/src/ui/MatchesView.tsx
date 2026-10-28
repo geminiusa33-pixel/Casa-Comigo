@@ -7,10 +7,12 @@ import type { ChatMessage, Match } from "../api/profile";
 import { ProfileSafetyActions } from "./ProfileSafetyActions";
 import { ProfilePreferenceSummary } from "./ProfilePreferenceSummary";
 import { ProfileAvatar } from "./ProfileAvatar";
+import { HousingGroupsPanel } from "./HousingGroupsPanel";
+import { RentContributionSummary } from "./RentContributionSummary";
 
-type Props = { session: Session };
+type Props = { session: Session; initialMatchId?: string | null };
 
-export function MatchesView({ session }: Props) {
+export function MatchesView({ session, initialMatchId }: Props) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,7 +31,11 @@ export function MatchesView({ session }: Props) {
     void apiRequest<Match[]>("/api/matches", session.access_token, { signal: controller.signal })
       .then((results) => {
         setMatches(results);
-        setSelectedMatchId((current) => current || results[0]?.id || "");
+        setSelectedMatchId((current) => (
+          initialMatchId && results.some((match) => match.id === initialMatchId)
+            ? initialMatchId
+            : current || results[0]?.id || ""
+        ));
       })
       .catch((caught: unknown) => {
         if (!controller.signal.aborted) {
@@ -40,7 +46,7 @@ export function MatchesView({ session }: Props) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [session.access_token]);
+  }, [initialMatchId, session.access_token]);
 
   useEffect(() => {
     if (!selectedMatchId) {
@@ -130,6 +136,7 @@ export function MatchesView({ session }: Props) {
   const selectedMatch = matches.find((match) => match.id === selectedMatchId);
 
   return (
+    <>
     <section style={{ display: "grid", gap: 16 }}>
       <div>
         <h2 style={{ marginBottom: 4 }}>Os seus matches</h2>
@@ -157,6 +164,10 @@ export function MatchesView({ session }: Props) {
                   >Conversar</Button>}
                 />
                 {match.bio && <p>{match.bio}</p>}
+                <RentContributionSummary
+                  amount={match.totalMonthlyRentContribution}
+                  label="Soma mensal indicada pelo par"
+                />
                 <div className="match-area-confirmation">
                   <span>Critério essencial cumprido</span>
                   <p>O centro de cada área está dentro do raio escolhido pela outra pessoa.</p>
@@ -253,5 +264,7 @@ export function MatchesView({ session }: Props) {
         </div>
       )}
     </section>
+    <HousingGroupsPanel session={session} initialMatchId={initialMatchId} />
+    </>
   );
 }

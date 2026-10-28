@@ -38,7 +38,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
   const locationLookupVersion = useRef(0);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
-  const [housemates, setHousemates] = useState("1");
+  const [housemates, setHousemates] = useState("2");
   const [genderPreference, setGenderPreference] = useState("any");
   const [hasPets, setHasPets] = useState(false);
   const [interests, setInterests] = useState("");
@@ -86,7 +86,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
         onPhotoPathChange(data.photoPath ?? null);
         setDisplayName(data.displayName);
         setBio(data.bio);
-        setHousemates(String(data.preferredHousemates ?? 1));
+        setHousemates(String(data.preferredHousemates ?? 2));
         setGenderPreference(data.genderPreference);
         setHasPets(data.hasPets);
         setInterests(data.interests.join(", "));
@@ -423,8 +423,9 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
             </header>
             <div className="profile-fields-grid">
               <label className="profile-field">
-                <span>Número de colegas de casa</span>
-                <Input type="number" min={1} max={20} value={housemates} required onChange={(_, data) => setHousemates(data.value)} />
+                <span>Total de pessoas na casa, incluindo-me</span>
+                <Input type="number" min={2} max={20} value={housemates} required onChange={(_, data) => setHousemates(data.value)} />
+                <small>Este número define a lotação do grupo. Ex.: 4 pessoas no total permite acompanhar o grupo até 4/4.</small>
               </label>
               <label className="profile-field">
                 <span>Preferência de género</span>
@@ -482,12 +483,12 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
             </div>
             <div className="profile-fields-grid">
               <label className="profile-field">
-                <span>Quanto pode contribuir por mês?</span>
+                <span>Máximo que pode contribuir para a renda por mês</span>
                 <div className="profile-money-input">
                   <span aria-hidden="true">€</span>
                   <Input type="number" min={0} max={100000} step="25" placeholder="Sem preferência" value={monthlyBudget} onChange={(_, data) => setMonthlyBudget(data.value)} />
                 </div>
-                <small>Valor mensal aproximado por pessoa.</small>
+                <small>Limite máximo mensal por pessoa. É informativo e não impede matches.</small>
               </label>
               <label className="profile-field">
                 <span>Em nome de quem ficará o contrato?</span>
