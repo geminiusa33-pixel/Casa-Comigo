@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Avatar,
   Badge,
   Button,
   Card,
@@ -31,6 +30,7 @@ import { DiscoveryView } from "./DiscoveryView";
 import { MatchesView } from "./MatchesView";
 import { ProfileEditor } from "./ProfileEditor";
 import { LandingPage } from "./LandingPage";
+import { ProfileAvatar } from "./ProfileAvatar";
 
 const useStyles = makeStyles({
   app: { minHeight: "100vh", color: tokens.colorNeutralForeground1 },
@@ -115,7 +115,9 @@ export function App() {
   const [authMode, setAuthMode] = useState<"landing" | "sign-in" | "sign-up">("landing");
   const [apiIdentity, setApiIdentity] = useState<string | null>(null);
   const [apiError, setApiError] = useState("");
+  const [ownPhotoPath, setOwnPhotoPath] = useState<string | null>(null);
   const currentLabel = navItems.find((item) => item.value === selected)?.label ?? "Descobrir";
+  const updateOwnPhotoPath = useCallback((photoPath: string | null) => setOwnPhotoPath(photoPath), []);
 
   useEffect(() => {
     if (!supabase) {
@@ -145,6 +147,7 @@ export function App() {
     if (!session) {
       setApiIdentity(null);
       setApiError("");
+      setOwnPhotoPath(null);
       return;
     }
 
@@ -164,6 +167,23 @@ export function App() {
 
     return () => controller.abort();
   }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    const controller = new AbortController();
+    void apiRequest<{ photoPath: string | null }>("/api/profile", session.access_token, {
+      signal: controller.signal,
+    }).then((profile) => {
+      setOwnPhotoPath(profile.photoPath ?? null);
+    }).catch((error: unknown) => {
+      if (!controller.signal.aborted) {
+        console.error("Não foi possível carregar a foto do perfil autenticado.", error);
+      }
+    });
+
+    return () => controller.abort();
+  }, [session?.access_token]);
 
   async function signOut() {
     if (!supabase) return;
@@ -199,7 +219,7 @@ export function App() {
         <div className={styles.topActions}>
           <Badge className="member-environment" appearance="tint" color="success">Ambiente local</Badge>
           <div className="member-account">
-            <Avatar name={session.user.email ?? "Utilizador"} size={32} />
+            <ProfileAvatar name={session.user.email ?? "Utilizador"} photoPath={ownPhotoPath} size={32} />
             <Text className="member-email" size={300}>{session.user.email}</Text>
           </div>
           <Button className="member-signout" appearance="secondary" size="small" onClick={() => void signOut()}>Sair</Button>
@@ -225,7 +245,15 @@ export function App() {
               vertical={false}
             >
               {navItems.map((item) => (
-                <Tab key={item.value} value={item.value} icon={item.icon}>{item.label}</Tab>
+                <Tab
+                  key={item.value}
+                  value={item.value}
+                  icon={item.value === "perfil"
+                    ? <ProfileAvatar name={session.user.email ?? "Perfil"} photoPath={ownPhotoPath} size={24} />
+                    : item.icon}
+                >
+                  {item.label}
+                </Tab>
               ))}
             </TabList>
           </div>
@@ -234,7 +262,7 @@ export function App() {
           {selected === "matches" && <MatchesView session={session} />}
           {selected === "perfil" && (
             <>
-              <ProfileEditor session={session} />
+              <ProfileEditor session={session} onPhotoPathChange={updateOwnPhotoPath} />
               <BlockedProfiles session={session} />
             </>
           )}

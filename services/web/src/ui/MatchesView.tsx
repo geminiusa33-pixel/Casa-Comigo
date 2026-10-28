@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Avatar, Button, Card, CardHeader, MessageBar, MessageBarBody, Spinner, Text } from "@fluentui/react-components";
+import { Button, Card, CardHeader, MessageBar, MessageBarBody, Spinner, Text } from "@fluentui/react-components";
 import type { Session } from "@supabase/supabase-js";
 import { apiRequest } from "../api/http";
 import type { ChatMessage, Match } from "../api/profile";
 import { ProfileSafetyActions } from "./ProfileSafetyActions";
+import { ProfilePreferenceSummary } from "./ProfilePreferenceSummary";
+import { ProfileAvatar } from "./ProfileAvatar";
 
 type Props = { session: Session };
 
@@ -18,6 +20,9 @@ export function MatchesView({ session }: Props) {
   const [messageError, setMessageError] = useState("");
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [confirmCancelId, setConfirmCancelId] = useState("");
+  const [cancellingMatchId, setCancellingMatchId] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -102,6 +107,24 @@ export function MatchesView({ session }: Props) {
     }
   }
 
+  async function cancelMatch(match: Match) {
+    setCancellingMatchId(match.id);
+    setError("");
+    setNotice("");
+    try {
+      await apiRequest<void>(`/api/matches/${match.id}`, session.access_token, { method: "DELETE" });
+      const remainingMatches = matches.filter((candidate) => candidate.id !== match.id);
+      setMatches(remainingMatches);
+      setSelectedMatchId((current) => current === match.id ? remainingMatches[0]?.id ?? "" : current);
+      setConfirmCancelId("");
+      setNotice(`Match com ${match.displayName} cancelado. Se a área continuar compatível, podem voltar a descobrir-se e dar gosto novamente.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível cancelar o match.");
+    } finally {
+      setCancellingMatchId("");
+    }
+  }
+
   if (loading) return <Spinner label="A carregar matches…" />;
 
   const selectedMatch = matches.find((match) => match.id === selectedMatchId);
@@ -113,6 +136,7 @@ export function MatchesView({ session }: Props) {
         <p style={{ marginTop: 0 }}>Um match só é criado depois de ambos gostarem um do outro. As conversas atualizam automaticamente.</p>
       </div>
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+      {notice && <MessageBar intent="success"><MessageBarBody>{notice}</MessageBarBody></MessageBar>}
       {!error && matches.length === 0 && (
         <Card style={{ padding: 24 }}><Text>Ainda não tem matches. Continue a conhecer pessoas na descoberta.</Text></Card>
       )}
@@ -122,7 +146,7 @@ export function MatchesView({ session }: Props) {
             {matches.map((match) => (
               <Card key={match.id} style={{ padding: 14, minWidth: 0 }}>
                 <CardHeader
-                  image={<Avatar name={match.displayName} />}
+                  image={<ProfileAvatar name={match.displayName} photoPath={match.photoPath} />}
                   header={<Text weight="semibold">{match.displayName}</Text>}
                   description={<Text>{match.areaLabel} · {new Date(match.matchedAt).toLocaleDateString("pt-PT")}</Text>}
                   action={<Button
@@ -133,7 +157,35 @@ export function MatchesView({ session }: Props) {
                   >Conversar</Button>}
                 />
                 {match.bio && <p>{match.bio}</p>}
-                <p>Interesses: {match.interests.length ? match.interests.join(", ") : "ainda não indicados"}</p>
+                <div className="match-area-confirmation">
+                  <span>Critério essencial cumprido</span>
+                  <p>O centro de cada área está dentro do raio escolhido pela outra pessoa.</p>
+                </div>
+                <ProfilePreferenceSummary profile={match} />
+                {confirmCancelId === match.id ? (
+                  <div className="match-cancel-confirm" role="group" aria-label={`Confirmar cancelamento do match com ${match.displayName}`}>
+                    <p>O match, a conversa e as mensagens serão eliminados. Ambos podem voltar a aparecer na descoberta se a área continuar compatível.</p>
+                    <div>
+                      <Button
+                        appearance="primary"
+                        disabled={cancellingMatchId !== ""}
+                        onClick={() => void cancelMatch(match)}
+                      >
+                        {cancellingMatchId === match.id ? "A cancelar…" : "Confirmar cancelamento"}
+                      </Button>
+                      <Button appearance="secondary" disabled={cancellingMatchId !== ""} onClick={() => setConfirmCancelId("")}>Manter match</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    className="match-cancel-button"
+                    appearance="subtle"
+                    disabled={cancellingMatchId !== ""}
+                    onClick={() => setConfirmCancelId(match.id)}
+                  >
+                    Cancelar match
+                  </Button>
+                )}
                 <ProfileSafetyActions
                   profileId={match.profileId}
                   displayName={match.displayName}

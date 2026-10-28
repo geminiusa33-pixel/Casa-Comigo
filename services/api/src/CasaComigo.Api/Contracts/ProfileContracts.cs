@@ -14,9 +14,19 @@ public sealed record ProfileResponse(
     string Opinions,
     string WorkSchedule,
     string CookingHabits,
+    decimal? MonthlyBudget,
+    string LeaseHolderPreference,
+    string BillsPreference,
+    string FurnishedPreference,
+    int? PreferredBathrooms,
+    int? PreferredBedrooms,
+    string HomeTypePreference,
+    string MoveInTiming,
+    int? MinimumLeaseMonths,
     bool DiscoveryVisible,
     bool ProfileComplete,
     SearchAreaResponse? SearchArea,
+    string? PhotoPath,
     DateTimeOffset UpdatedAt);
 
 /// <summary>Dados privados da zona de procura, devolvidos apenas ao próprio utilizador.</summary>
@@ -66,6 +76,42 @@ public sealed record UpdateProfileRequest
     [StringLength(500)]
     public string CookingHabits { get; init; } = "";
 
+    /// <summary>Contribuição mensal máxima pretendida em euros; não filtra matches.</summary>
+    [Range(typeof(decimal), "0", "100000")]
+    public decimal? MonthlyBudget { get; init; }
+
+    /// <summary>Preferência sobre quem assina o contrato; não filtra matches.</summary>
+    [Required, RegularExpression("^(any|own_name|joint|other)$")]
+    public string LeaseHolderPreference { get; init; } = "any";
+
+    /// <summary>Preferência para dividir despesas e recibos; não filtra matches.</summary>
+    [Required, RegularExpression("^(discuss|split_equally|separate)$")]
+    public string BillsPreference { get; init; } = "discuss";
+
+    /// <summary>Preferência sobre mobília; não filtra matches.</summary>
+    [Required, RegularExpression("^(any|furnished|unfurnished|partial)$")]
+    public string FurnishedPreference { get; init; } = "any";
+
+    /// <summary>Número de casas de banho preferido; não filtra matches.</summary>
+    [Range(1, 20)]
+    public int? PreferredBathrooms { get; init; }
+
+    /// <summary>Número de quartos preferido; não filtra matches.</summary>
+    [Range(1, 30)]
+    public int? PreferredBedrooms { get; init; }
+
+    /// <summary>Tipo de casa preferido; não filtra matches.</summary>
+    [Required, RegularExpression("^(any|apartment|house|room)$")]
+    public string HomeTypePreference { get; init; } = "any";
+
+    /// <summary>Prazo de mudança pretendido; não filtra matches.</summary>
+    [Required, RegularExpression("^(flexible|immediately|one_to_three_months|three_plus_months)$")]
+    public string MoveInTiming { get; init; } = "flexible";
+
+    /// <summary>Duração mínima do contrato em meses; não filtra matches.</summary>
+    [Range(1, 120)]
+    public int? MinimumLeaseMonths { get; init; }
+
     /// <summary>Autoriza a apresentação do perfil a pessoas em zona mutuamente compatível.</summary>
     public bool DiscoveryVisible { get; init; }
 }
@@ -106,4 +152,14 @@ public sealed record DiscoveryProfileResponse(
     string Opinions,
     string WorkSchedule,
     string CookingHabits,
+    decimal? MonthlyBudget,
+    string LeaseHolderPreference,
+    string BillsPreference,
+    string FurnishedPreference,
+    int? PreferredBathrooms,
+    int? PreferredBedrooms,
+    string HomeTypePreference,
+    string MoveInTiming,
+    int? MinimumLeaseMonths,
+    string? PhotoPath,
     string AreaLabel);

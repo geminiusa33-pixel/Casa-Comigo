@@ -35,8 +35,24 @@ public sealed class MatchingService(
     }
 
     /// <inheritdoc />
+    public async Task<bool> PassAsync(
+        Guid profileId,
+        Guid recipientId,
+        CancellationToken cancellationToken)
+    {
+        if (profileId == recipientId)
+            throw new ProfileValidationException("Não pode rejeitar o seu próprio perfil.");
+
+        return await repository.PassAsync(profileId, recipientId, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public Task<IReadOnlyList<MatchResponse>> GetMatchesAsync(
         Guid profileId,
         CancellationToken cancellationToken) =>
         repository.GetMatchesAsync(profileId, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<bool> CancelMatchAsync(Guid profileId, Guid matchId, CancellationToken cancellationToken) =>
+        repository.CancelMatchAsync(profileId, matchId, cancellationToken);
 }

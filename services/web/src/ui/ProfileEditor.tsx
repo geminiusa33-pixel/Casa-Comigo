@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type FormEvent } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   Button,
   Card,
@@ -19,13 +19,23 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { apiRequest } from "../api/http";
 import type { Profile } from "../api/profile";
+import { supabase } from "../api/supabase";
+import { ProfileAvatar } from "./ProfileAvatar";
+import { getAdministrativeAreaLabel } from "./portugalAdministrativeArea";
 
 const SearchAreaMap = lazy(() => import("./SearchAreaMap").then(({ SearchAreaMap: Map }) => ({ default: Map })));
 
-type Props = { session: Session };
+type Props = {
+  session: Session;
+  onPhotoPathChange: (photoPath: string | null) => void;
+};
 
-export function ProfileEditor({ session }: Props) {
+export function ProfileEditor({ session, onPhotoPathChange }: Props) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [photoPath, setPhotoPath] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const locationLookupVersion = useRef(0);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [housemates, setHousemates] = useState("1");
@@ -35,6 +45,15 @@ export function ProfileEditor({ session }: Props) {
   const [opinions, setOpinions] = useState("");
   const [workSchedule, setWorkSchedule] = useState("");
   const [cookingHabits, setCookingHabits] = useState("");
+  const [monthlyBudget, setMonthlyBudget] = useState("");
+  const [leaseHolderPreference, setLeaseHolderPreference] = useState("any");
+  const [billsPreference, setBillsPreference] = useState("discuss");
+  const [furnishedPreference, setFurnishedPreference] = useState("any");
+  const [preferredBathrooms, setPreferredBathrooms] = useState("");
+  const [preferredBedrooms, setPreferredBedrooms] = useState("");
+  const [homeTypePreference, setHomeTypePreference] = useState("any");
+  const [moveInTiming, setMoveInTiming] = useState("flexible");
+  const [minimumLeaseMonths, setMinimumLeaseMonths] = useState("");
   const [discoveryVisible, setDiscoveryVisible] = useState(false);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -63,6 +82,8 @@ export function ProfileEditor({ session }: Props) {
     void apiRequest<Profile>("/api/profile", session.access_token, { signal: controller.signal })
       .then((data) => {
         setProfile(data);
+        setPhotoPath(data.photoPath ?? null);
+        onPhotoPathChange(data.photoPath ?? null);
         setDisplayName(data.displayName);
         setBio(data.bio);
         setHousemates(String(data.preferredHousemates ?? 1));
@@ -72,12 +93,29 @@ export function ProfileEditor({ session }: Props) {
         setOpinions(data.opinions);
         setWorkSchedule(data.workSchedule);
         setCookingHabits(data.cookingHabits);
+        setMonthlyBudget(data.monthlyBudget === null ? "" : String(data.monthlyBudget));
+        setLeaseHolderPreference(data.leaseHolderPreference);
+        setBillsPreference(data.billsPreference);
+        setFurnishedPreference(data.furnishedPreference);
+        setPreferredBathrooms(data.preferredBathrooms === null ? "" : String(data.preferredBathrooms));
+        setPreferredBedrooms(data.preferredBedrooms === null ? "" : String(data.preferredBedrooms));
+        setHomeTypePreference(data.homeTypePreference);
+        setMoveInTiming(data.moveInTiming);
+        setMinimumLeaseMonths(data.minimumLeaseMonths === null ? "" : String(data.minimumLeaseMonths));
         setDiscoveryVisible(data.discoveryVisible);
         if (data.searchArea) {
           setLatitude(String(data.searchArea.latitude));
           setLongitude(String(data.searchArea.longitude));
           setRadiusKm(String(data.searchArea.radiusKm));
-          setAreaLabel(data.searchArea.areaLabel);
+          if (data.searchArea.areaLabel) {
+            setAreaLabel(data.searchArea.areaLabel);
+          } else {
+            void updateLocationCoordinates(
+              String(data.searchArea.latitude),
+              String(data.searchArea.longitude),
+              data.searchArea.locationSource,
+            );
+          }
           setLocationSource(data.searchArea.locationSource);
         }
       })
@@ -89,8 +127,100 @@ export function ProfileEditor({ session }: Props) {
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
-    return () => controller.abort();
-  }, [session.access_token]);
+    return () => {
+      controller.abort();
+      locationLookupVersion.current += 1;
+    };
+  }, [session.access_token, onPhotoPathChange]);
+
+  async function uploadProfilePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    const extensions: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    };
+    const extension = extensions[file.type];
+    if (!extension) {
+      setError("Escolha uma imagem JPEG, PNG ou WebP.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("A foto não pode ultrapassar 10 MB.");
+      return;
+    }
+    if (!supabase) {
+      setError("O armazenamento de fotos não está configurado.");
+      return;
+    }
+
+    setError("");
+    setNotice("");
+    setPhotoUploading(true);
+    const path = `${session.user.id}/${crypto.randomUUID()}.${extension}`;
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("profile-photos")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { error: insertError } = await supabase.from("profile_photos").insert({
+        profile_id: session.user.id,
+        storage_object_path: path,
+        display_order: 0,
+      });
+      if (insertError) {
+        const { error: cleanupError } = await supabase.storage.from("profile-photos").remove([path]);
+        if (cleanupError) console.error("Não foi possível limpar o upload de foto incompleto.", cleanupError);
+        throw insertError;
+      }
+
+      setPhotoPath(path);
+      setProfile((current) => current ? { ...current, photoPath: path } : current);
+      onPhotoPathChange(path);
+
+      const { data: oldPhotos, error: listError } = await supabase
+        .from("profile_photos")
+        .select("storage_object_path")
+        .eq("profile_id", session.user.id)
+        .neq("storage_object_path", path);
+      if (listError) {
+        console.error("A foto foi atualizada, mas não foi possível listar fotos antigas.", listError);
+        setNotice("Foto atualizada. Não foi possível limpar uma foto anterior.");
+        return;
+      }
+
+      const oldPaths = oldPhotos.map((photo) => photo.storage_object_path);
+      if (oldPaths.length) {
+        const { error: removeError } = await supabase.storage.from("profile-photos").remove(oldPaths);
+        if (removeError) {
+          console.error("A foto foi atualizada, mas não foi possível limpar fotos antigas.", removeError);
+          setNotice("Foto atualizada. Não foi possível limpar uma foto anterior.");
+          return;
+        }
+        const { error: deleteRowsError } = await supabase
+          .from("profile_photos")
+          .delete()
+          .eq("profile_id", session.user.id)
+          .neq("storage_object_path", path);
+        if (deleteRowsError) {
+          console.error("A foto foi atualizada, mas não foi possível limpar os registos antigos.", deleteRowsError);
+          setNotice("Foto atualizada. Não foi possível limpar um registo anterior.");
+          return;
+        }
+      }
+
+      setNotice("Foto de perfil atualizada.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível carregar a foto.");
+    } finally {
+      setPhotoUploading(false);
+    }
+  }
 
   function useBrowserLocation() {
     setError("");
@@ -102,9 +232,11 @@ export function ProfileEditor({ session }: Props) {
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        setLatitude(coords.latitude.toFixed(5));
-        setLongitude(coords.longitude.toFixed(5));
-        setLocationSource("gps");
+        void updateLocationCoordinates(
+          coords.latitude.toFixed(5),
+          coords.longitude.toFixed(5),
+          "gps",
+        );
         setLocating(false);
       },
       (positionError) => {
@@ -118,9 +250,54 @@ export function ProfileEditor({ session }: Props) {
   }
 
   function selectMapLocation(selectedLatitude: number, selectedLongitude: number) {
-    setLatitude(selectedLatitude.toFixed(5));
-    setLongitude(selectedLongitude.toFixed(5));
+    void updateLocationCoordinates(
+      selectedLatitude.toFixed(5),
+      selectedLongitude.toFixed(5),
+      "manual",
+    );
+  }
+
+  async function updateLocationCoordinates(
+    latitudeValue: string,
+    longitudeValue: string,
+    source: "gps" | "manual",
+  ) {
+    const lookupVersion = ++locationLookupVersion.current;
+    setLatitude(latitudeValue);
+    setLongitude(longitudeValue);
+    setLocationSource(source);
+    setAreaLabel("");
+
+    if (!latitudeValue.trim() || !longitudeValue.trim()) return;
+
+    const latitudeNumber = Number(latitudeValue);
+    const longitudeNumber = Number(longitudeValue);
+    if (!Number.isFinite(latitudeNumber) || !Number.isFinite(longitudeNumber)
+      || latitudeNumber < -90 || latitudeNumber > 90
+      || longitudeNumber < -180 || longitudeNumber > 180) return;
+
+    setError("");
+    try {
+      const label = await getAdministrativeAreaLabel(latitudeNumber, longitudeNumber);
+      if (lookupVersion !== locationLookupVersion.current) return;
+      if (label) {
+        setAreaLabel(label);
+        return;
+      }
+
+      setError("Não foi possível identificar um distrito ou ilha nesta localização. Preencha a área aproximada manualmente.");
+    } catch (caught) {
+      if (lookupVersion !== locationLookupVersion.current) return;
+      console.error("Não foi possível carregar os limites administrativos locais.", caught);
+      setError("Não foi possível carregar os limites administrativos locais. Preencha a área aproximada manualmente.");
+    }
+  }
+
+  function updateManualCoordinate(coordinate: "latitude" | "longitude", value: string) {
+    locationLookupVersion.current += 1;
     setLocationSource("manual");
+    if (coordinate === "latitude") setLatitude(value);
+    else setLongitude(value);
   }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -158,6 +335,15 @@ export function ProfileEditor({ session }: Props) {
           opinions,
           workSchedule,
           cookingHabits,
+          monthlyBudget: monthlyBudget.trim() === "" ? null : Number(monthlyBudget),
+          leaseHolderPreference,
+          billsPreference,
+          furnishedPreference,
+          preferredBathrooms: preferredBathrooms.trim() === "" ? null : Number(preferredBathrooms),
+          preferredBedrooms: preferredBedrooms.trim() === "" ? null : Number(preferredBedrooms),
+          homeTypePreference,
+          moveInTiming,
+          minimumLeaseMonths: minimumLeaseMonths.trim() === "" ? null : Number(minimumLeaseMonths),
           discoveryVisible,
         }),
       });
@@ -193,6 +379,30 @@ export function ProfileEditor({ session }: Props) {
               <span className="profile-section-icon"><Person24Regular /></span>
               <div><h3>Sobre si</h3><p>Uma primeira impressão para quem também procura casa.</p></div>
             </header>
+            <div className="profile-photo-control">
+              <ProfileAvatar name={displayName || "O seu perfil"} photoPath={photoPath} size={96} />
+              <div>
+                <strong>Foto de perfil</strong>
+                <p>A sua foto aparece no ícone do perfil, na descoberta e nos matches.</p>
+                <input
+                  ref={photoInputRef}
+                  className="profile-photo-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Escolher foto de perfil"
+                  onChange={(event) => void uploadProfilePhoto(event)}
+                />
+                <Button
+                  type="button"
+                  appearance="secondary"
+                  disabled={photoUploading}
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  {photoUploading ? "A carregar foto…" : photoPath ? "Alterar foto" : "Adicionar foto"}
+                </Button>
+                <small>JPEG, PNG ou WebP · máximo 10 MB.</small>
+              </div>
+            </div>
             <div className="profile-fields-grid">
               <label className="profile-field profile-field-wide">
                 <span>Nome a apresentar</span>
@@ -261,11 +471,92 @@ export function ProfileEditor({ session }: Props) {
             </div>
           </section>
 
+          <section className="profile-form-section profile-housing-section">
+            <header className="profile-section-heading">
+              <span className="profile-section-icon"><Home24Regular /></span>
+              <div><h3>Detalhes da casa</h3><p>Partilhe as suas condições preferidas para encontrarem um equilíbrio.</p></div>
+            </header>
+            <div className="profile-soft-note">
+              <span>Preferências flexíveis</span>
+              <p>Estas respostas ajudam a conversar, mas nunca impedem um match.</p>
+            </div>
+            <div className="profile-fields-grid">
+              <label className="profile-field">
+                <span>Quanto pode contribuir por mês?</span>
+                <div className="profile-money-input">
+                  <span aria-hidden="true">€</span>
+                  <Input type="number" min={0} max={100000} step="25" placeholder="Sem preferência" value={monthlyBudget} onChange={(_, data) => setMonthlyBudget(data.value)} />
+                </div>
+                <small>Valor mensal aproximado por pessoa.</small>
+              </label>
+              <label className="profile-field">
+                <span>Em nome de quem ficará o contrato?</span>
+                <select value={leaseHolderPreference} onChange={(event) => setLeaseHolderPreference(event.target.value)}>
+                  <option value="any">Sem preferência</option>
+                  <option value="own_name">No meu nome</option>
+                  <option value="joint">Em conjunto</option>
+                  <option value="other">A combinar</option>
+                </select>
+              </label>
+              <label className="profile-field">
+                <span>Despesas e recibos</span>
+                <select value={billsPreference} onChange={(event) => setBillsPreference(event.target.value)}>
+                  <option value="discuss">A combinar</option>
+                  <option value="split_equally">Dividir por igual</option>
+                  <option value="separate">Cada um paga os seus</option>
+                </select>
+              </label>
+              <label className="profile-field">
+                <span>Mobília</span>
+                <select value={furnishedPreference} onChange={(event) => setFurnishedPreference(event.target.value)}>
+                  <option value="any">Sem preferência</option>
+                  <option value="furnished">Mobilada</option>
+                  <option value="unfurnished">Sem mobília</option>
+                  <option value="partial">Parcialmente mobilada</option>
+                </select>
+              </label>
+              <label className="profile-field">
+                <span>Casas de banho (preferência)</span>
+                <Input type="number" min={1} max={20} placeholder="Sem preferência" value={preferredBathrooms} onChange={(_, data) => setPreferredBathrooms(data.value)} />
+              </label>
+              <label className="profile-field">
+                <span>Quartos (preferência)</span>
+                <Input type="number" min={1} max={30} placeholder="Sem preferência" value={preferredBedrooms} onChange={(_, data) => setPreferredBedrooms(data.value)} />
+              </label>
+              <label className="profile-field">
+                <span>Tipo de casa</span>
+                <select value={homeTypePreference} onChange={(event) => setHomeTypePreference(event.target.value)}>
+                  <option value="any">Sem preferência</option>
+                  <option value="apartment">Apartamento</option>
+                  <option value="house">Moradia</option>
+                  <option value="room">Quarto numa casa partilhada</option>
+                </select>
+              </label>
+              <label className="profile-field">
+                <span>Quando gostaria de se mudar?</span>
+                <select value={moveInTiming} onChange={(event) => setMoveInTiming(event.target.value)}>
+                  <option value="flexible">Com flexibilidade</option>
+                  <option value="immediately">Assim que possível</option>
+                  <option value="one_to_three_months">Dentro de 1 a 3 meses</option>
+                  <option value="three_plus_months">Daqui a 3 ou mais meses</option>
+                </select>
+              </label>
+              <label className="profile-field">
+                <span>Duração mínima do contrato (meses)</span>
+                <Input type="number" min={1} max={120} placeholder="Sem preferência" value={minimumLeaseMonths} onChange={(_, data) => setMinimumLeaseMonths(data.value)} />
+              </label>
+            </div>
+          </section>
+
           <section className="profile-form-section profile-location-section">
             <header className="profile-section-heading">
               <span className="profile-section-icon"><Location24Regular /></span>
               <div><h3>Zona de procura</h3><p>Encontre pessoas que procuram viver perto de si.</p></div>
             </header>
+            <div className="profile-hard-note">
+              <span>Critério essencial para um match</span>
+              <p>O centro de cada área tem de ficar dentro do raio escolhido pela outra pessoa, nos dois sentidos. É o único critério de perfil obrigatório para aparecerem um ao outro.</p>
+            </div>
             <div className="profile-location-privacy">
               <ShieldCheckmark24Regular />
               <span>A localização exata é privada. Só mostramos a área aproximada aos perfis compatíveis.</span>
@@ -286,15 +577,16 @@ export function ProfileEditor({ session }: Props) {
             <div className="profile-fields-grid">
               <label className="profile-field profile-field-wide">
                 <span>Área aproximada</span>
-                <Input placeholder="Ex.: Lisboa, Porto, Coimbra" value={areaLabel} maxLength={160} required onChange={(_, data) => setAreaLabel(data.value)} />
+                <Input placeholder="Ex.: Distrito de Lisboa, Porto" value={areaLabel} maxLength={160} required onChange={(_, data) => { locationLookupVersion.current += 1; setAreaLabel(data.value); }} />
+                <small>Preenchida localmente com o distrito ou ilha ao escolher uma localização. Pode ajustá-la.</small>
               </label>
               <label className="profile-field">
                 <span>Latitude</span>
-                <Input type="number" min={-90} max={90} step="any" value={latitude} required onChange={(_, data) => { setLatitude(data.value); setLocationSource("manual"); }} />
+                <Input type="number" min={-90} max={90} step="any" value={latitude} required onChange={(_, data) => updateManualCoordinate("latitude", data.value)} onBlur={() => { void updateLocationCoordinates(latitude, longitude, "manual"); }} />
               </label>
               <label className="profile-field">
                 <span>Longitude</span>
-                <Input type="number" min={-180} max={180} step="any" value={longitude} required onChange={(_, data) => { setLongitude(data.value); setLocationSource("manual"); }} />
+                <Input type="number" min={-180} max={180} step="any" value={longitude} required onChange={(_, data) => updateManualCoordinate("longitude", data.value)} onBlur={() => { void updateLocationCoordinates(latitude, longitude, "manual"); }} />
               </label>
               <label className="profile-field">
                 <span>Raio de procura (km)</span>

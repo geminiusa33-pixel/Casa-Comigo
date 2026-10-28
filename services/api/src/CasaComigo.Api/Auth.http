@@ -1,6 +1,7 @@
 @baseUrl = http://localhost:5080
 @accessToken = paste-a-local-supabase-access-token-here
 @otherProfileId = replace-with-a-visible-compatible-profile-guid
+@matchId = replace-with-a-match-guid
 
 ### A request without a token must be rejected.
 GET {{baseUrl}}/api/auth/session
@@ -28,6 +29,15 @@ Content-Type: application/json
   "opinions": "",
   "workSchedule": "Dias úteis",
   "cookingHabits": "Cozinho algumas vezes por semana",
+  "monthlyBudget": 650,
+  "leaseHolderPreference": "joint",
+  "billsPreference": "split_equally",
+  "furnishedPreference": "furnished",
+  "preferredBathrooms": 1,
+  "preferredBedrooms": 2,
+  "homeTypePreference": "apartment",
+  "moveInTiming": "one_to_three_months",
+  "minimumLeaseMonths": 12,
   "discoveryVisible": false
 }
 
@@ -52,8 +62,16 @@ Authorization: Bearer {{accessToken}}
 POST {{baseUrl}}/api/profiles/{{otherProfileId}}/likes
 Authorization: Bearer {{accessToken}}
 
+### Pass on a profile; it returns to discovery after three days.
+POST {{baseUrl}}/api/profiles/{{otherProfileId}}/passes
+Authorization: Bearer {{accessToken}}
+
 ### List reciprocal matches for the current user.
 GET {{baseUrl}}/api/matches
+Authorization: Bearer {{accessToken}}
+
+### Cancel a match; the conversation is removed and both users may rediscover each other.
+DELETE {{baseUrl}}/api/matches/{{matchId}}
 Authorization: Bearer {{accessToken}}
 
 ### Read the latest messages for one of your matches.

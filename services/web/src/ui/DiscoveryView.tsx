@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  Avatar,
   Badge,
   Button,
   Card,
@@ -11,6 +10,7 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import {
   ArrowClockwise24Regular,
+  Dismiss24Regular,
   Heart24Regular,
   Location24Regular,
   PeopleCommunity24Regular,
@@ -18,8 +18,11 @@ import {
   Sparkle24Regular,
 } from "@fluentui/react-icons";
 import { apiRequest } from "../api/http";
-import type { DiscoveryProfile } from "../api/profile";
+import type { DiscoveryProfile, Profile } from "../api/profile";
 import { ProfileSafetyActions } from "./ProfileSafetyActions";
+import { ProfilePreferenceSummary } from "./ProfilePreferenceSummary";
+import { ProfileAvatar } from "./ProfileAvatar";
+import { ProfilePhoto } from "./ProfilePhoto";
 
 type Props = {
   session: Session;
@@ -28,8 +31,9 @@ type Props = {
 
 export function DiscoveryView({ session, onEditProfile }: Props) {
   const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
+  const [ownProfile, setOwnProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [likingId, setLikingId] = useState<string | null>(null);
+  const [actingOnProfileId, setActingOnProfileId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -37,8 +41,12 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
     setLoading(true);
     setError("");
     try {
-      const results = await apiRequest<DiscoveryProfile[]>("/api/discovery/profiles", session.access_token);
+      const [results, currentProfile] = await Promise.all([
+        apiRequest<DiscoveryProfile[]>("/api/discovery/profiles", session.access_token),
+        apiRequest<Profile>("/api/profile", session.access_token),
+      ]);
       setProfiles(results);
+      setOwnProfile(currentProfile);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível carregar a descoberta.");
     } finally {
@@ -49,7 +57,7 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
   useEffect(() => { void loadProfiles(); }, [loadProfiles]);
 
   async function likeProfile(profile: DiscoveryProfile) {
-    setLikingId(profile.id);
+    setActingOnProfileId(profile.id);
     setNotice("");
     setError("");
     try {
@@ -61,11 +69,30 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
       setNotice(result.isMatch
         ? `É um match! Tu e ${profile.displayName} gostaram um do outro.`
         : `Gosto enviado a ${profile.displayName}. Se for recíproco, terão um match.`);
-      await loadProfiles();
+      setProfiles((current) => current.filter((candidate) => candidate.id !== profile.id));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível registar o gosto.");
     } finally {
-      setLikingId(null);
+      setActingOnProfileId(null);
+    }
+  }
+
+  async function passProfile(profile: DiscoveryProfile) {
+    setActingOnProfileId(profile.id);
+    setNotice("");
+    setError("");
+    try {
+      await apiRequest<void>(
+        `/api/profiles/${profile.id}/passes`,
+        session.access_token,
+        { method: "POST" },
+      );
+      setProfiles((current) => current.filter((candidate) => candidate.id !== profile.id));
+      setNotice(`${profile.displayName} foi ocultado da descoberta. Poderá voltar a aparecer dentro de três dias.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível ocultar este perfil.");
+    } finally {
+      setActingOnProfileId(null);
     }
   }
 
@@ -90,7 +117,7 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
 
       <div className="discovery-assurance">
         <ShieldCheckmark24Regular />
-        <span>Apenas mostramos perfis com áreas de procura compatíveis. A sua localização exata permanece privada.</span>
+        <span>O centro de cada área tem de ficar dentro do raio escolhido pela outra pessoa, nos dois sentidos. É o único critério obrigatório; a localização exata permanece privada.</span>
       </div>
 
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
@@ -133,14 +160,20 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
             <article className={`discovery-profile discovery-profile-${index % 3}`} key={profile.id}>
               <Card>
                 <div className="discovery-profile-cover">
-                  <span className="discovery-profile-cover-orb discovery-profile-cover-orb-one" />
-                  <span className="discovery-profile-cover-orb discovery-profile-cover-orb-two" />
+                  {profile.photoPath ? (
+                    <ProfilePhoto name={profile.displayName} photoPath={profile.photoPath} />
+                  ) : (
+                    <>
+                      <span className="discovery-profile-cover-orb discovery-profile-cover-orb-one" />
+                      <span className="discovery-profile-cover-orb discovery-profile-cover-orb-two" />
+                      <div className="discovery-profile-avatar">
+                        <ProfileAvatar name={profile.displayName} size={64} />
+                      </div>
+                    </>
+                  )}
                   <Badge appearance="tint" color="success">
-                    <Location24Regular /> Zona compatível
+                    <Location24Regular /> Critério essencial · zona compatível
                   </Badge>
-                  <div className="discovery-profile-avatar">
-                    <Avatar name={profile.displayName} size={64} />
-                  </div>
                 </div>
 
                 <div className="discovery-profile-content">
@@ -152,44 +185,30 @@ export function DiscoveryView({ session, onEditProfile }: Props) {
                     <span className="discovery-profile-index">{String(index + 1).padStart(2, "0")}</span>
                   </div>
 
-                  <div className="discovery-profile-facts">
-                    <span><PeopleCommunity24Regular /> Procura {profile.preferredHousemates} {profile.preferredHousemates === 1 ? "colega" : "colegas"}</span>
-                    <span>{profile.hasPets ? "Animais bem-vindos" : "Sem animais indicados"}</span>
-                  </div>
-
                   {profile.bio && <p className="discovery-profile-bio">{profile.bio}</p>}
 
-                  {profile.interests.length > 0 && (
-                    <div className="discovery-profile-interests" aria-label="Interesses">
-                      {profile.interests.map((interest) => (
-                        <Badge key={interest} appearance="tint">{interest}</Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="discovery-profile-details">
-                    {profile.workSchedule && (
-                      <div><span>Rotina</span><p>{profile.workSchedule}</p></div>
-                    )}
-                    {profile.cookingHabits && (
-                      <div><span>Cozinha</span><p>{profile.cookingHabits}</p></div>
-                    )}
-                    {profile.opinions && (
-                      <div><span>Convivência</span><p>{profile.opinions}</p></div>
-                    )}
-                  </div>
+                  <ProfilePreferenceSummary profile={profile} compareWith={ownProfile ?? undefined} />
 
                   <div className="discovery-profile-actions">
                     <Button
                       className="discovery-like"
                       appearance="primary"
                       icon={<Heart24Regular />}
-                      disabled={likingId !== null}
+                      disabled={actingOnProfileId !== null}
                       onClick={() => void likeProfile(profile)}
                     >
-                      {likingId === profile.id ? "A enviar gosto…" : "Tenho interesse"}
+                      {actingOnProfileId === profile.id ? "A enviar…" : "Tenho interesse"}
                     </Button>
-                    <span>O interesse só é partilhado quando gosta.</span>
+                    <Button
+                      className="discovery-pass"
+                      appearance="secondary"
+                      icon={<Dismiss24Regular />}
+                      disabled={actingOnProfileId !== null}
+                      onClick={() => void passProfile(profile)}
+                    >
+                      Não tenho interesse
+                    </Button>
+                    <span>Se não escolher, este perfil pode voltar a aparecer.</span>
                   </div>
                   <div className="discovery-profile-safety">
                     <ProfileSafetyActions
