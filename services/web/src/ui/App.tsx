@@ -4,8 +4,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
-  Divider,
   makeStyles,
   MessageBar,
   MessageBarBody,
@@ -23,12 +21,14 @@ import {
   PeopleCommunity24Regular,
   Person24Regular,
   Location24Regular,
-  ArrowUpRight24Regular,
 } from "@fluentui/react-icons";
 import { hasSupabasePublicConfig } from "../api/config";
 import { apiRequest } from "../api/http";
 import { supabase } from "../api/supabase";
 import { AuthPanel } from "./AuthPanel";
+import { DiscoveryView } from "./DiscoveryView";
+import { MatchesView } from "./MatchesView";
+import { ProfileEditor } from "./ProfileEditor";
 
 const useStyles = makeStyles({
   app: { minHeight: "100vh", color: tokens.colorNeutralForeground1 },
@@ -40,6 +40,7 @@ const useStyles = makeStyles({
     justifyContent: "space-between",
     backgroundColor: tokens.colorNeutralBackground1,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    "@media (max-width: 760px)": { padding: "0 5vw" },
   },
   brand: { display: "flex", alignItems: "center", gap: "11px" },
   brandMark: {
@@ -51,25 +52,31 @@ const useStyles = makeStyles({
   layout: {
     width: "min(1160px, 90vw)", margin: "38px auto 72px",
     display: "grid", gridTemplateColumns: "minmax(0, 1fr) 292px", gap: "32px",
+    "@media (max-width: 760px)": { gridTemplateColumns: "1fr", width: "90vw", marginTop: "26px" },
   },
   heading: { marginBottom: "24px" },
   eyebrow: {
     color: "#58745e", fontSize: "12px", letterSpacing: "1.5px",
     textTransform: "uppercase", fontWeight: 700,
   },
-  title: { margin: "7px 0 8px", fontSize: "34px", lineHeight: 1.15, letterSpacing: "-1px" },
+  title: {
+    margin: "7px 0 8px", fontSize: "34px", lineHeight: 1.15, letterSpacing: "-1px",
+    "@media (max-width: 760px)": { fontSize: "29px" },
+  },
   subtitle: { color: tokens.colorNeutralForeground2, margin: 0, lineHeight: 1.6 },
   nav: { margin: "24px 0" },
   hero: {
     padding: "28px", borderRadius: "18px",
     background: "linear-gradient(120deg, #eaf0e8 0%, #f1efe4 100%)",
     display: "grid", gridTemplateColumns: "1fr auto", gap: "20px", alignItems: "center",
+    "@media (max-width: 760px)": { gridTemplateColumns: "1fr" },
   },
   heroTitle: { fontSize: "21px", lineHeight: 1.3, margin: "0 0 8px", maxWidth: "470px" },
   heroText: { margin: 0, lineHeight: 1.55, color: "#4b5c50", maxWidth: "490px" },
   heroIcon: {
     width: "80px", height: "80px", borderRadius: "26px", display: "grid",
     placeItems: "center", backgroundColor: "rgba(255,255,255,.62)", color: "#47644d",
+    "@media (max-width: 760px)": { display: "none" },
   },
   sectionTitle: { margin: "30px 0 14px", fontSize: "18px" },
   profileCard: { padding: "22px", borderRadius: "16px", boxShadow: "0 2px 10px rgba(32,42,34,.04)" },
@@ -88,13 +95,6 @@ const useStyles = makeStyles({
   },
   status: { marginTop: "18px" },
   footer: { marginTop: "18px", color: tokens.colorNeutralForeground3, fontSize: "12px", lineHeight: 1.5 },
-  "@media (max-width: 760px)": {
-    topbar: { padding: "0 5vw" },
-    layout: { gridTemplateColumns: "1fr", width: "90vw", marginTop: "26px" },
-    hero: { gridTemplateColumns: "1fr" },
-    heroIcon: { display: "none" },
-    title: { fontSize: "29px" },
-  },
 });
 
 const navItems = [
@@ -222,35 +222,16 @@ export function App() {
             ))}
           </TabList>
 
-          <section className={styles.hero}>
-            <div>
-              <h2 className={styles.heroTitle}>A sua próxima casa começa por conhecer quem a vai partilhar.</h2>
-              <p className={styles.heroText}>Crie o seu perfil e indique uma zona de procura. Só mostramos a localização aproximada necessária para encontrar compatibilidade.</p>
-              <Button appearance="primary" icon={<ArrowUpRight24Regular />} style={{ marginTop: 18 }}>
-                Preparar perfil
-              </Button>
-            </div>
-            <div className={styles.heroIcon}><PeopleCommunity24Regular fontSize={34} /></div>
-          </section>
-
-          <h2 className={styles.sectionTitle}>{selected === "casas" ? "Casas da comunidade" : "Uma primeira ideia de compatibilidade"}</h2>
-          <Card className={styles.profileCard}>
-            <CardHeader
-              image={<Avatar className={styles.avatar} name="M" />}
-              header={<Text className={styles.profileName}>O seu espaço está pronto para começar</Text>}
-              description={<Text className={styles.profileMeta}>Adicione as suas preferências para preparar a descoberta.</Text>}
-            />
-            <div className={styles.tags}>
-              <Badge appearance="tint" color="informative">Rotinas compatíveis</Badge>
-              <Badge appearance="tint" color="informative">Zona de procura</Badge>
-              <Badge appearance="tint" color="informative">Forma de partilhar</Badge>
-            </div>
-            <Divider />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 16 }}>
-              <Text size={300} style={{ color: "#66736a" }}>Ainda sem perfis: os resultados virão da API após autenticação.</Text>
-              <Button appearance="secondary">Completar perfil</Button>
-            </div>
-          </Card>
+          {selected === "descobrir" && <DiscoveryView session={session} />}
+          {selected === "matches" && <MatchesView session={session} />}
+          {selected === "perfil" && <ProfileEditor session={session} />}
+          {(selected === "casas" || selected === "favoritos") && (
+            <Card className={styles.profileCard}>
+              <Text weight="semibold">Esta área será ligada numa próxima etapa.</Text>
+              <p>Por agora, pode completar o perfil e conhecer pessoas em zonas compatíveis.</p>
+              <Button appearance="primary" onClick={() => setSelected("perfil")}>Completar perfil</Button>
+            </Card>
+          )}
         </main>
 
         <aside>
@@ -276,7 +257,7 @@ export function App() {
                     : "Configure services/web/.env.local para ligar ao Supabase local."}
             </MessageBarBody>
           </MessageBar>
-          <p className={styles.footer}>Fundação de interface. Os dados apresentados são apenas texto de orientação, não correspondem a perfis reais.</p>
+          <p className={styles.footer}>A localização exata nunca é apresentada a outros utilizadores.</p>
         </aside>
       </div>
     </div>

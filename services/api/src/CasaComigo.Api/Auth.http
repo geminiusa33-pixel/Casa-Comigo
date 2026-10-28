@@ -1,5 +1,6 @@
 @baseUrl = http://localhost:5080
 @accessToken = paste-a-local-supabase-access-token-here
+@otherProfileId = replace-with-a-visible-compatible-profile-guid
 
 ### A request without a token must be rejected.
 GET {{baseUrl}}/api/auth/session
@@ -7,3 +8,63 @@ GET {{baseUrl}}/api/auth/session
 ### Paste the access_token from a successful Supabase Auth response.
 GET {{baseUrl}}/api/auth/session
 Authorization: Bearer {{accessToken}}
+
+### Read your own profile and private search coordinates.
+GET {{baseUrl}}/api/profile
+Authorization: Bearer {{accessToken}}
+
+### Update your living preferences.
+PUT {{baseUrl}}/api/profile
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "displayName": "Ana",
+  "bio": "Procuro uma casa tranquila.",
+  "preferredHousemates": 1,
+  "genderPreference": "any",
+  "hasPets": false,
+  "interests": ["caminhadas", "cinema"],
+  "opinions": "",
+  "workSchedule": "Dias úteis",
+  "cookingHabits": "Cozinho algumas vezes por semana",
+  "discoveryVisible": false
+}
+
+### Set a manually selected area. Exact coordinates are private.
+PUT {{baseUrl}}/api/profile/search-area
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "latitude": 38.7223,
+  "longitude": -9.1393,
+  "radiusKm": 25,
+  "areaLabel": "Lisboa",
+  "locationSource": "manual"
+}
+
+### List profiles with mutually compatible search areas.
+GET {{baseUrl}}/api/discovery/profiles
+Authorization: Bearer {{accessToken}}
+
+### Like an eligible profile; a match is created only after a reciprocal like.
+POST {{baseUrl}}/api/profiles/{{otherProfileId}}/likes
+Authorization: Bearer {{accessToken}}
+
+### List reciprocal matches for the current user.
+GET {{baseUrl}}/api/matches
+Authorization: Bearer {{accessToken}}
+
+### Read the latest messages for one of your matches.
+GET {{baseUrl}}/api/matches/{{matchId}}/messages
+Authorization: Bearer {{accessToken}}
+
+### Send a message to a match.
+POST {{baseUrl}}/api/matches/{{matchId}}/messages
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "body": "Ola! Tambem procuro casa nesta zona."
+}

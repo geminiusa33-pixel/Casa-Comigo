@@ -1,16 +1,29 @@
-using System.Text;
 using CasaComigo.Api.Data;
 using CasaComigo.Api.Endpoints;
+using CasaComigo.Api.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 var supabaseUrl = (builder.Configuration["SUPABASE_URL"] ?? "http://127.0.0.1:54321").TrimEnd('/');
-var jwtSecret = builder.Configuration["SUPABASE_JWT_SECRET"];
-var jwtIssuer = builder.Configuration["SUPABASE_JWT_ISSUER"] ?? "supabase";
+var jwtIssuer = builder.Configuration["SUPABASE_JWT_ISSUER"];
+
+builder.Services.AddSingleton(_ =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("Supabase")
+        ?? throw new InvalidOperationException("ConnectionStrings:Supabase tem de estar configurada.");
+    return NpgsqlDataSource.Create(connectionString);
+});
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IMatchingRepository, MatchingRepository>();
+builder.Services.AddScoped<IMatchingService, MatchingService>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")
@@ -22,32 +35,24 @@ builder.Services
     {
         options.RequireHttpsMetadata = !supabaseUrl.StartsWith("http://127.0.0.1", StringComparison.OrdinalIgnoreCase)
             && !supabaseUrl.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase);
-
-        if (!string.IsNullOrWhiteSpace(jwtSecret))
+        options.Authority = $"{supabaseUrl}/auth/v1";
+        options.MetadataAddress = $"{supabaseUrl}/auth/v1/.well-known/openid-configuration";
+        options.Audience = "authenticated";
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = jwtIssuer,
-                ValidateAudience = true,
-                ValidAudience = "authenticated",
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-                ClockSkew = TimeSpan.FromMinutes(1)
-            };
-        }
-        else
-        {
-            // Supports Supabase projects that publish signing-key metadata. Local HS256
-            // tokens require SUPABASE_JWT_SECRET to be supplied by the developer.
-            options.Authority = $"{supabaseUrl}/auth/v1";
-            options.Audience = "authenticated";
-        }
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = "authenticated",
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
     });
 
 builder.Services.AddAuthorization();
 builder.Services.AddValidation();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
         .AllowAnyHeader()
@@ -68,14 +73,9 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "casa-comi
 
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapAuthEndpoints();
-MapNotImplemented(api, "GET", "/profile");
-MapNotImplemented(api, "PUT", "/profile");
-MapNotImplemented(api, "PUT", "/profile/search-area");
-MapNotImplemented(api, "GET", "/discovery/profiles");
-MapNotImplemented(api, "POST", "/profiles/{profileId:guid}/likes");
-MapNotImplemented(api, "GET", "/matches");
-MapNotImplemented(api, "GET", "/matches/{matchId:guid}/messages");
-MapNotImplemented(api, "POST", "/matches/{matchId:guid}/messages");
+api.MapProfileEndpoints();
+api.MapMatchingEndpoints();
+api.MapChatEndpoints();
 MapNotImplemented(api, "POST", "/matches/{matchId:guid}/visit-requests");
 MapNotImplemented(api, "GET", "/houses");
 MapNotImplemented(api, "POST", "/houses");
