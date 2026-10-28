@@ -1,0 +1,14 @@
+{
+  "name": "casa-comigo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "services/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @casa-comigo/web",
+    "build": "npm run build --workspace @casa-comigo/web",
+    "test": "npm run test --workspace @casa-comigo/web",
+    "typecheck": "npm run typecheck --workspace @casa-comigo/web"
+  }
+}

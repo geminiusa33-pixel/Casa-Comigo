@@ -1,0 +1,29 @@
+# Node / Vite
+node_modules/
+**/node_modules/
+dist/
+coverage/
+.vite/
+
+# .NET
+**/bin/
+**/obj/
+TestResults/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!.env.api.example
+!.env.production.example
+!.env.api.production.example
+!.env.local.example
+supabase/.temp/
+
+# IDE / OS
+.vs/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db

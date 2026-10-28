@@ -1,0 +1,20 @@
+:root {
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  color: #242a24;
+  background: #f7f6f2;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 2% 1%, rgba(218, 228, 209, .28), transparent 34rem),
+    #f7f6f2;
+}
+
+button, input { font: inherit; }

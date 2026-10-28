@@ -1,0 +1,9 @@
+@baseUrl = http://localhost:5080
+@accessToken = paste-a-local-supabase-access-token-here
+
+### A request without a token must be rejected.
+GET {{baseUrl}}/api/auth/session
+
+### Paste the access_token from a successful Supabase Auth response.
+GET {{baseUrl}}/api/auth/session
+Authorization: Bearer {{accessToken}}
