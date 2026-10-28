@@ -30,6 +30,7 @@ import { BlockedProfiles } from "./BlockedProfiles";
 import { DiscoveryView } from "./DiscoveryView";
 import { MatchesView } from "./MatchesView";
 import { ProfileEditor } from "./ProfileEditor";
+import { LandingPage } from "./LandingPage";
 
 const useStyles = makeStyles({
   app: { minHeight: "100vh", color: tokens.colorNeutralForeground1 },
@@ -111,6 +112,7 @@ export function App() {
   const [selected, setSelected] = useState("descobrir");
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<"landing" | "sign-in" | "sign-up">("landing");
   const [apiIdentity, setApiIdentity] = useState<string | null>(null);
   const [apiError, setApiError] = useState("");
   const currentLabel = navItems.find((item) => item.value === selected)?.label ?? "Descobrir";
@@ -174,56 +176,61 @@ export function App() {
   }
 
   if (!session) {
+    if (authMode === "landing") {
+      return <LandingPage onSignIn={() => setAuthMode("sign-in")} onSignUp={() => setAuthMode("sign-up")} />;
+    }
+
     return (
-      <div className={styles.app}>
-        <header className={styles.topbar}>
-          <div className={styles.brand}>
-            <div className={styles.brandMark}><Home24Regular /></div>
-            <Text className={styles.brandName} size={500}>casa comigo</Text>
-          </div>
-          <Badge appearance="tint" color="success">Ambiente local</Badge>
-        </header>
-        <AuthPanel onAuthenticated={setSession} />
-      </div>
+      <AuthPanel
+        onAuthenticated={setSession}
+        initialMode={authMode}
+        onBack={() => setAuthMode("landing")}
+      />
     );
   }
 
   return (
-    <div className={styles.app}>
-      <header className={styles.topbar}>
+    <div className={`${styles.app} member-app`}>
+      <header className={`${styles.topbar} member-topbar`}>
         <div className={styles.brand}>
           <div className={styles.brandMark}><Home24Regular /></div>
           <Text className={styles.brandName} size={500}>casa comigo</Text>
         </div>
         <div className={styles.topActions}>
-          <Badge appearance="tint" color="success">Pré-visualização local</Badge>
-          <Text size={300}>{session.user.email}</Text>
-          <Button appearance="secondary" size="small" onClick={() => void signOut()}>Sair</Button>
-          <Avatar name={session.user.email ?? "Utilizador"} size={32} />
+          <Badge className="member-environment" appearance="tint" color="success">Ambiente local</Badge>
+          <div className="member-account">
+            <Avatar name={session.user.email ?? "Utilizador"} size={32} />
+            <Text className="member-email" size={300}>{session.user.email}</Text>
+          </div>
+          <Button className="member-signout" appearance="secondary" size="small" onClick={() => void signOut()}>Sair</Button>
         </div>
       </header>
 
-      <div className={styles.layout}>
-        <main>
-          <section className={styles.heading}>
+      <div className={`${styles.layout} member-layout`}>
+        <main className="member-main">
+          <section className={`${styles.heading} member-heading`}>
             <Text className={styles.eyebrow}>Um bom começo para partilhar casa</Text>
-            <h1 className={styles.title}>{currentLabel}, ao seu ritmo.</h1>
+            <h1 className={styles.title}>
+              {currentLabel}<span className="member-heading-comma">,</span> <em>ao seu ritmo.</em>
+            </h1>
             <p className={styles.subtitle}>Pessoas, espaços e rotinas que podem combinar com a sua próxima casa.</p>
           </section>
 
-          <TabList
-            className={styles.nav}
-            selectedValue={selected}
-            onTabSelect={(_, data) => setSelected(String(data.value))}
-            aria-label="Navegação principal"
-            vertical={false}
-          >
-            {navItems.map((item) => (
-              <Tab key={item.value} value={item.value} icon={item.icon}>{item.label}</Tab>
-            ))}
-          </TabList>
+          <div className="member-tabs-wrap">
+            <TabList
+              className={styles.nav}
+              selectedValue={selected}
+              onTabSelect={(_, data) => setSelected(String(data.value))}
+              aria-label="Navegação principal"
+              vertical={false}
+            >
+              {navItems.map((item) => (
+                <Tab key={item.value} value={item.value} icon={item.icon}>{item.label}</Tab>
+              ))}
+            </TabList>
+          </div>
 
-          {selected === "descobrir" && <DiscoveryView session={session} />}
+          {selected === "descobrir" && <DiscoveryView session={session} onEditProfile={() => setSelected("perfil")} />}
           {selected === "matches" && <MatchesView session={session} />}
           {selected === "perfil" && (
             <>
@@ -240,7 +247,7 @@ export function App() {
           )}
         </main>
 
-        <aside>
+        <aside className="member-sidebar">
           <Card className={styles.sideCard}>
             <h2 className={styles.sideTitle}>Comece por aqui</h2>
             <p className={styles.sideText}>Pode atualizar as suas escolhas quando quiser. A localização precisa fica privada.</p>

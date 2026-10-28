@@ -10,6 +10,7 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
+import { Home24Regular } from "@fluentui/react-icons";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../api/supabase";
 import { authErrorMessage } from "../auth/authErrorMessage";
@@ -37,11 +38,13 @@ const useStyles = makeStyles({
 
 type AuthPanelProps = {
   onAuthenticated: (session: Session) => void;
+  initialMode: "sign-in" | "sign-up";
+  onBack: () => void;
 };
 
-export function AuthPanel({ onAuthenticated }: AuthPanelProps) {
+export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelProps) {
   const styles = useStyles();
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [mode, setMode] = useState<"sign-in" | "sign-up">(initialMode);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,13 +53,31 @@ export function AuthPanel({ onAuthenticated }: AuthPanelProps) {
   const [pending, setPending] = useState(false);
   if (!supabase) {
     return (
-      <div className={styles.page}>
-        <Card className={styles.card}>
-          <Text weight="semibold">Ligue-se ao Supabase local</Text>
-          <p className={styles.note}>
-            Configure o URL e a chave pública em services/web/.env.local e reinicie o frontend.
-          </p>
-        </Card>
+      <div className={`${styles.page} auth-page`}>
+        <section className="auth-story">
+          <a className="landing-brand" href="#" onClick={(event) => { event.preventDefault(); onBack(); }}>
+            <span className="landing-brand-mark"><Home24Regular /></span>
+            <span>casa comigo<span className="landing-brand-period">.</span></span>
+          </a>
+          <div className="auth-story-copy">
+            <span className="landing-eyebrow">Um bom lugar começa com as pessoas</span>
+            <h1>Partilhar casa. Sentir-se em casa.</h1>
+            <p>Encontra pessoas que combinam contigo, na zona onde queres viver.</p>
+          </div>
+        </section>
+        <div className="auth-form-area">
+          <div className="auth-card">
+            <Card className={styles.card}>
+              <Button appearance="subtle" onClick={onBack} className="auth-back">
+                <span aria-hidden="true">←</span> Voltar ao início
+              </Button>
+              <Text weight="semibold">Ligue-se ao Supabase local</Text>
+              <p className={styles.note}>
+                Configure o URL e a chave pública em services/web/.env.local e reinicie o frontend.
+              </p>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -106,83 +127,102 @@ export function AuthPanel({ onAuthenticated }: AuthPanelProps) {
   const isSignUp = mode === "sign-up";
 
   return (
-    <div className={styles.page}>
-      <Card className={styles.card}>
-        <Text size={200} weight="semibold" style={{ color: "#58745e" }}>
-          {isSignUp ? "A sua próxima casa começa aqui" : "Bem-vindo de volta"}
-        </Text>
-        <h1 className={styles.title}>{isSignUp ? "Crie a sua conta" : "Inicie sessão"}</h1>
-        <p className={styles.description}>
-          {isSignUp
-            ? "Registe-se para começar a preparar o seu perfil de partilha."
-            : "Entre para continuar a preparar a sua experiência Casa Comigo."}
-        </p>
-
-        {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
-        {notice && <MessageBar intent="success"><MessageBarBody>{notice}</MessageBarBody></MessageBar>}
-
-        <form className={styles.form} onSubmit={handleSubmit}>
-          {isSignUp && (
-            <div className={styles.field}>
-              <Label htmlFor="display-name" required>Nome a apresentar</Label>
-              <Input
-                id="display-name"
-                autoComplete="name"
-                maxLength={80}
-                value={displayName}
-                onChange={(_, data) => setDisplayName(data.value)}
-                required
-              />
-            </div>
-          )}
-          <div className={styles.field}>
-            <Label htmlFor="auth-email" required>Email</Label>
-            <Input
-              id="auth-email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(_, data) => setEmail(data.value)}
-              required
-            />
-          </div>
-          <div className={styles.field}>
-            <Label htmlFor="auth-password" required>Palavra-passe</Label>
-            <Input
-              id="auth-password"
-              type="password"
-              autoComplete={isSignUp ? "new-password" : "current-password"}
-              minLength={isSignUp ? 8 : undefined}
-              value={password}
-              onChange={(_, data) => setPassword(data.value)}
-              required
-            />
-          </div>
-          <Button type="submit" appearance="primary" disabled={pending}>
-            {pending ? "Aguarde…" : isSignUp ? "Criar conta" : "Entrar"}
-          </Button>
-        </form>
-
-        <div className={styles.switch}>
-          <Text size={300}>
-            {isSignUp ? "Já tem conta? " : "Ainda não tem conta? "}
-          </Text>
-          <Button
-            appearance="transparent"
-            disabled={pending}
-            onClick={() => {
-              setMode(isSignUp ? "sign-in" : "sign-up");
-              setError("");
-              setNotice("");
-            }}
-          >
-            {isSignUp ? "Iniciar sessão" : "Registar"}
-          </Button>
+    <div className={`${styles.page} auth-page`}>
+      <section className="auth-story">
+        <a className="landing-brand" href="#" onClick={(event) => { event.preventDefault(); onBack(); }}>
+          <span className="landing-brand-mark"><Home24Regular /></span>
+          <span>casa comigo<span className="landing-brand-period">.</span></span>
+        </a>
+        <div className="auth-story-copy">
+          <span className="landing-eyebrow">Um bom lugar começa com as pessoas</span>
+          <h1>Partilhar casa. Sentir-se em casa.</h1>
+          <p>Encontra pessoas que combinam contigo, na zona onde queres viver.</p>
         </div>
-        <p className={styles.note}>
-          A autenticação usa o Supabase local. A sua palavra-passe não é enviada nem guardada pela API Casa Comigo.
-        </p>
-      </Card>
+        <span className="auth-story-footer">A tua próxima casa começa por uma boa conversa.</span>
+      </section>
+      <div className="auth-form-area">
+        <div className="auth-card">
+          <Card className={styles.card}>
+            <Button appearance="subtle" onClick={onBack} className="auth-back">
+              <span aria-hidden="true">←</span> Voltar ao início
+            </Button>
+            <Text size={200} weight="semibold" style={{ color: "#58745e" }}>
+              {isSignUp ? "A tua próxima casa começa aqui" : "Bem-vindo de volta"}
+            </Text>
+            <h1 className={styles.title}>{isSignUp ? "Cria a tua conta" : "Inicia sessão"}</h1>
+            <p className={styles.description}>
+              {isSignUp
+                ? "Regista-te para começares a preparar o teu perfil de partilha."
+                : "Entra para continuares a preparar a tua experiência Casa Comigo."}
+            </p>
+
+            {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+            {notice && <MessageBar intent="success"><MessageBarBody>{notice}</MessageBarBody></MessageBar>}
+
+            <form className={styles.form} onSubmit={handleSubmit}>
+              {isSignUp && (
+                <div className={styles.field}>
+                  <Label htmlFor="display-name" required>Nome a apresentar</Label>
+                  <Input
+                    id="display-name"
+                    autoComplete="name"
+                    maxLength={80}
+                    value={displayName}
+                    onChange={(_, data) => setDisplayName(data.value)}
+                    required
+                  />
+                </div>
+              )}
+              <div className={styles.field}>
+                <Label htmlFor="auth-email" required>Email</Label>
+                <Input
+                  id="auth-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(_, data) => setEmail(data.value)}
+                  required
+                />
+              </div>
+              <div className={styles.field}>
+                <Label htmlFor="auth-password" required>Palavra-passe</Label>
+                <Input
+                  id="auth-password"
+                  type="password"
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
+                  minLength={isSignUp ? 8 : undefined}
+                  value={password}
+                  onChange={(_, data) => setPassword(data.value)}
+                  required
+                />
+              </div>
+              <Button className="auth-primary" type="submit" appearance="primary" disabled={pending}>
+                {pending ? "Aguarda…" : isSignUp ? "Criar conta" : "Entrar"}
+              </Button>
+            </form>
+
+            <div className={styles.switch}>
+              <Text size={300}>
+                {isSignUp ? "Já tens conta? " : "Ainda não tens conta? "}
+              </Text>
+              <Button
+                appearance="transparent"
+                disabled={pending}
+                onClick={() => {
+                  setMode(isSignUp ? "sign-in" : "sign-up");
+                  setError("");
+                  setNotice("");
+                }}
+              >
+                {isSignUp ? "Iniciar sessão" : "Registar"}
+              </Button>
+            </div>
+            <p className={styles.note}>
+              A autenticação usa o Supabase. A tua palavra-passe não é enviada nem guardada pela API Casa Comigo.
+            </p>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
