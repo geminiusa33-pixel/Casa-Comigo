@@ -26,7 +26,7 @@ import {
 } from "@fluentui/react-icons";
 import { apiRequest } from "../api/http";
 import type { DiscoveryProfile, Profile } from "../api/profile";
-import type { HousingGroup } from "../api/housingGroups";
+import type { HousingGroup, HousingGroupMember } from "../api/housingGroups";
 import { ProfileSafetyActions } from "./ProfileSafetyActions";
 import { ProfilePreferenceSummary } from "./ProfilePreferenceSummary";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -49,6 +49,7 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [newMatch, setNewMatch] = useState<{ id: string; displayName: string } | null>(null);
+  const [selectedGroupMember, setSelectedGroupMember] = useState<HousingGroupMember | null>(null);
   const [actingOnGroupId, setActingOnGroupId] = useState<string | null>(null);
   const [showPastProfiles, setShowPastProfiles] = useState(false);
   const [reconsideredProfileIds, setReconsideredProfileIds] = useState<Set<string>>(() => new Set());
@@ -178,6 +179,66 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
         </DialogSurface>
       </Dialog>
 
+      <Dialog
+        open={selectedGroupMember !== null}
+        onOpenChange={(_, data) => {
+          if (!data.open) setSelectedGroupMember(null);
+        }}
+      >
+        <DialogSurface className="discovery-group-member-dialog">
+          <DialogBody>
+            <DialogTitle>Perfil de {selectedGroupMember?.displayName}</DialogTitle>
+            {selectedGroupMember && (
+              <DialogContent>
+                <div className="discovery-group-member-profile-heading">
+                  <ProfileAvatar
+                    name={selectedGroupMember.displayName}
+                    photoPath={selectedGroupMember.photoPath}
+                    size={56}
+                  />
+                  <div>
+                    <strong>{selectedGroupMember.displayName}</strong>
+                    <span><Location24Regular /> {selectedGroupMember.areaLabel}</span>
+                  </div>
+                </div>
+                <div className="discovery-group-compatibility-badges">
+                  <h3>Estas pessoas também procuram</h3>
+                  <div>
+                    <Badge appearance="tint" color="success">Zona de procura compatível</Badge>
+                    <Badge appearance="tint" color="success">
+                      Escalão de renda {formatRentContributionRange(selectedGroupMember.rentContributionRange)}
+                    </Badge>
+                  </div>
+                </div>
+                {selectedGroupMember.profile.bio && (
+                  <p className="discovery-group-member-bio">{selectedGroupMember.profile.bio}</p>
+                )}
+                <RentContributionSummary
+                  minimum={sumRentContributionRanges([
+                    ownProfile?.rentContributionRange,
+                    selectedGroupMember.rentContributionRange,
+                  ])?.minimum}
+                  maximum={sumRentContributionRanges([
+                    ownProfile?.rentContributionRange,
+                    selectedGroupMember.rentContributionRange,
+                  ])?.maximum}
+                  label="Soma mensal indicada por vocês"
+                />
+                <ProfilePreferenceSummary
+                  profile={selectedGroupMember.profile}
+                  compareWith={ownProfile ?? undefined}
+                />
+              </DialogContent>
+            )}
+            <DialogActions>
+              <Button appearance="secondary" onClick={() => setSelectedGroupMember(null)}>
+                Fechar perfil
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+
       <div className="discovery-toolbar">
         <div>
           <div className="discovery-kicker"><Sparkle24Regular /> Afinidade começa pela convivência</div>
@@ -243,15 +304,31 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
                   maximum={group.totalMonthlyRentMaximum}
                   label="Soma mensal indicada pelo grupo"
                 />
+                <div className="discovery-group-compatibility-badges">
+                  <h3>Estas pessoas também procuram</h3>
+                  <div>
+                    <Badge appearance="tint" color="success">Zona de procura compatível</Badge>
+                    <Badge appearance="tint" color="success">
+                      Escalão de renda {formatRentContributionRange(group.members[0]?.rentContributionRange)}
+                    </Badge>
+                  </div>
+                </div>
                 <div className="discovery-housing-group-members">
                   {group.members.map((member) => (
-                    <div key={member.profileId}>
+                    <Button
+                      key={member.profileId}
+                      className="discovery-housing-group-member"
+                      appearance="subtle"
+                      aria-label={`Ver perfil de ${member.displayName}`}
+                      onClick={() => setSelectedGroupMember(member)}
+                    >
                       <ProfileAvatar name={member.displayName} photoPath={member.photoPath} />
                       <span>
                         <strong>{member.displayName}</strong>
                         <small>{member.areaLabel} · {formatRentContributionRange(member.rentContributionRange)}</small>
                       </span>
-                    </div>
+                      <span className="discovery-group-member-view">Ver perfil</span>
+                    </Button>
                   ))}
                 </div>
                 <Button

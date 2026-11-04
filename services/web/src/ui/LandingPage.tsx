@@ -273,11 +273,22 @@ export function LandingPage({
               Menos acaso. Mais afinidade.
             </p>
             <div className="landing-hero-actions">
-              <Button appearance="primary" className="landing-primary-button" size="large" onClick={onSignUp}>
-                {authenticated ? "Completar o meu perfil" : "Criar o meu perfil"} <ArrowRight24Regular />
+              <Button
+                appearance={authenticated ? "subtle" : "primary"}
+                className={authenticated ? undefined : "landing-primary-button"}
+                size="large"
+                onClick={onSignUp}
+              >
+                {authenticated ? "Completar o meu perfil" : "Criar o meu perfil"}
               </Button>
-              <Button appearance="subtle" size="large" onClick={onSignIn}>
+              <Button
+                appearance={authenticated ? "primary" : "subtle"}
+                className={authenticated ? "landing-primary-button" : undefined}
+                size="large"
+                onClick={onSignIn}
+              >
                 {authenticated ? "Ir para Descobrir" : "Já tenho conta"}
+                {authenticated && <ArrowRight24Regular />}
               </Button>
             </div>
             <div className="landing-trust-line">

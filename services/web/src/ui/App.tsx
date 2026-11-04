@@ -103,7 +103,7 @@ const useStyles = makeStyles({
 });
 
 const navItems = [
-  { value: "descobrir", label: "Descobrir", icon: <PeopleCommunity24Regular /> },
+  { value: "descobrir", label: "Descobrir pessoas", icon: <PeopleCommunity24Regular /> },
   { value: "matches", label: "Conversas", icon: <ChatMultiple24Regular /> },
   { value: "casas", label: "Casas", icon: <Home24Regular /> },
   { value: "favoritos", label: "Favoritos", icon: <Heart24Regular /> },
@@ -359,17 +359,6 @@ export function App() {
             </MessageBar>
           )}
 
-          <Card className={`${styles.sideCard} member-start-card`}>
-            <div>
-              <h2 className={styles.sideTitle}>Começa por aqui</h2>
-              <p className={styles.sideText}>Podes atualizar as tuas escolhas quando quiseres. A localização precisa fica privada.</p>
-            </div>
-            <div className={styles.step}><span className={styles.stepDot}>1</span><Text size={300}>Conta-nos um pouco sobre ti</Text></div>
-            <div className={styles.step}><span className={styles.stepDot}>2</span><Text size={300}>Escolhe a zona e o raio de procura</Text></div>
-            <div className={styles.step}><span className={styles.stepDot}>3</span><Text size={300}>Descobre pessoas e casas</Text></div>
-            <Button appearance="secondary" onClick={() => setSelected("perfil")}>Completa o perfil</Button>
-          </Card>
-
           {selected === "descobrir" && (
             <DiscoveryView
               session={session}
@@ -410,6 +399,13 @@ export function App() {
         </main>
 
         <aside className="member-sidebar">
+          {selected === "descobrir" && (
+            <Card className={`${styles.sideCard} member-profile-prompt`}>
+              <h2 className={styles.sideTitle}>Completa o teu perfil</h2>
+              <p className={styles.sideText}>Adiciona as tuas preferências para encontrares pessoas mais compatíveis.</p>
+              <Button appearance="secondary" onClick={() => setSelected("perfil")}>Editar perfil</Button>
+            </Card>
+          )}
           <Card className={styles.sideCard}>
             <h2 className={styles.sideTitle}><Location24Regular /> A tua privacidade primeiro</h2>
             <p className={styles.sideText}>A localização só é pedida quando escolhes configurar a tua área. Podes usar uma referência manual em vez de GPS.</p>

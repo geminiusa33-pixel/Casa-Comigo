@@ -1052,29 +1052,27 @@ button, input { font: inherit; }
 .member-tabs-wrap [role="tab"][aria-selected="true"]::after { display: none; }
 .member-tabs-wrap [role="tab"] svg { width: 17px; height: 17px; }
 .member-tabs-wrap [role="tab"].member-discover-tab:not([aria-selected="true"]) {
-  color: #315d48;
-  background: #edf2e8;
+  color: #fff;
+  background: #55795e;
   font-weight: 700;
+  box-shadow: 0 3px 10px rgba(27, 68, 46, .14);
 }
 .member-tabs-wrap [role="tab"].member-discover-tab[aria-selected="true"] { box-shadow: 0 3px 10px rgba(27, 68, 46, .18); }
+.member-tabs-wrap [role="tab"].member-discover-tab:not([aria-selected="true"]):hover {
+  color: #fff;
+  background: #315d48;
+}
 .member-home-link { min-width: 0; padding: 0; border: 0; color: #283e32; background: transparent; text-align: left; }
 .member-home-link:hover { color: #315d48; background: transparent; }
 .member-home-link .brandMark { flex: 0 0 auto; }
-.member-start-card {
+.member-profile-prompt {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(120px, 1fr)) auto;
-  align-items: center;
-  gap: 12px;
-  margin: -5px 0 25px;
-  padding: 16px 18px;
-  border: 1px solid #e0e7dc;
-  border-radius: 14px;
-  background: linear-gradient(110deg, #f1f4ec, #fffefa);
+  gap: 8px;
+  background: linear-gradient(145deg, #f2f5ee, #fffefa);
 }
-.member-start-card .sideTitle { margin: 0 0 4px; color: #33483a; font-size: 13px; }
-.member-start-card .sideText { margin: 0; color: #66746a; font-size: 11px; line-height: 1.45; }
-.member-start-card [class*="step"] { margin-top: 0; }
-.member-start-card .fui-Button { min-height: 34px; border-radius: 8px; font-size: 11px; }
+.member-profile-prompt .sideTitle { margin: 0; color: #33483a; font-size: 14px; }
+.member-profile-prompt .sideText { margin: 0; color: #66746a; font-size: 12px; line-height: 1.5; }
+.member-profile-prompt .fui-Button { justify-self: start; min-height: 34px; border-radius: 8px; font-size: 11px; }
 .profile-saved-notice { margin: -8px 0 18px; border-radius: 10px; }
 
 .member-sidebar { padding-top: 8px; }
@@ -1151,10 +1149,26 @@ button, input { font: inherit; }
 .discovery-housing-group-capacity > span { color: #788276; font-size: 11px; }
 .discovery-housing-group-heading > svg { width: 23px; height: 23px; color: #58745d; }
 .discovery-housing-group-members { display: grid; gap: 9px; }
-.discovery-housing-group-members > div { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.discovery-housing-group-members > div > span { display: grid; min-width: 0; }
+.discovery-housing-group-member { width: 100%; min-width: 0; justify-content: flex-start; gap: 9px; padding: 7px; border-radius: 10px; text-align: left; }
+.discovery-housing-group-member:hover { background: #f3f6f0; }
+.discovery-housing-group-member > span:nth-of-type(1) { display: grid; min-width: 0; }
 .discovery-housing-group-members strong { color: #425348; font-size: 11px; }
 .discovery-housing-group-members small { overflow: hidden; color: #828a7f; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.discovery-group-member-view { margin-left: auto; color: #416448; font-size: 10px; font-weight: 650; white-space: nowrap; }
+.discovery-group-member-profile-heading { display: flex; align-items: center; gap: 12px; margin: 6px 0 12px; }
+.discovery-group-member-profile-heading > div { display: grid; gap: 5px; }
+.discovery-group-member-profile-heading strong { color: #344b39; font-size: 16px; }
+.discovery-group-member-profile-heading span { display: flex; align-items: center; gap: 4px; color: #748077; font-size: 12px; }
+.discovery-group-member-profile-heading span svg { width: 14px; height: 14px; }
+.discovery-group-compatibility-badges { display: grid; gap: 7px; margin: 10px 0; padding: 10px; border: 1px solid #dfe9dc; border-radius: 10px; background: #f5f8f2; }
+.discovery-group-compatibility-badges h3 { margin: 0; color: #48634b; font-size: 10px; font-weight: 700; letter-spacing: .45px; text-transform: uppercase; }
+.discovery-group-compatibility-badges > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.discovery-group-member-bio { color: #59685b; font-size: 13px; line-height: 1.6; }
+.discovery-group-member-dialog .profile-compatibility-summary { display: grid; gap: 9px; margin-top: 12px; }
+.discovery-group-member-dialog .profile-common-facts,
+.discovery-group-member-dialog .profile-reconsider-facts { max-height: 230px; }
+.discovery-group-member-dialog .profile-common-facts > div,
+.discovery-group-member-dialog .profile-reconsider-facts > div { max-height: 165px; }
 .discovery-housing-group-card > .fui-Button { min-height: 38px; border-radius: 9px; }
 .rent-contribution-summary { display: grid; gap: 3px; padding: 9px 11px; border: 1px solid #dce8da; border-radius: 10px; background: linear-gradient(135deg, #f3f8f0, #fbfcf8); }
 .rent-contribution-summary > span { color: #6b796b; font-size: 9px; font-weight: 700; letter-spacing: .45px; text-transform: uppercase; }
@@ -1432,9 +1446,8 @@ button, input { font: inherit; }
   .member-tabs-wrap [role="tablist"]::-webkit-scrollbar { display: none; }
   .member-tabs-wrap [role="tab"] { min-height: 39px; padding: 0 11px; font-size: 10px; }
   .member-tabs-wrap [role="tab"] svg { display: none; }
-  .member-start-card { grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; padding: 15px; }
-  .member-start-card [class*="step"] { align-items: center; }
-  .member-start-card .fui-Button { justify-self: start; }
+  .member-tabs-wrap [role="tab"].member-discover-tab svg { display: block; }
+  .member-tabs-wrap [role="tab"].member-discover-tab { min-width: max-content; }
   .discovery-view { gap: 14px; }
   .discovery-toolbar { align-items: flex-start; flex-wrap: wrap; }
   .discovery-toolbar-actions { width: 100%; justify-content: flex-start; }
