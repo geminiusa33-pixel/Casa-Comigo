@@ -502,6 +502,7 @@ button, input { font: inherit; }
 .landing-privacy-icon svg { width: 25px; height: 25px; }
 .landing-privacy h2 { margin: 7px 0 5px; font-size: 29px; }
 .landing-privacy p { max-width: 650px; font-size: 12px; }
+.landing-privacy .landing-privacy-safeguards { margin-top: 9px; color: #788177; font-size: 11px; }
 
 .landing-footer {
   min-height: 86px;

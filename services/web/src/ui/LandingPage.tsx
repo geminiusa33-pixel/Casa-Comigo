@@ -300,7 +300,18 @@ export function LandingPage({
           <div>
             <span className="landing-eyebrow">Privacidade, desde o início</span>
             <h2>A tua localização é tua.</h2>
-            <p>Usamos a área de procura para sugerir pessoas compatíveis. A morada e as coordenadas exatas não aparecem no teu perfil público.</p>
+            <p>
+              Não usamos cookies de terceiros para publicidade, análise ou rastreamento. A autenticação
+              guarda uma sessão essencial no armazenamento local do teu browser. Usamos a zona de procura
+              para sugerir pessoas compatíveis; a morada e as coordenadas exatas não aparecem no perfil
+              público. O mapa carrega imagens de OpenStreetMap, que recebe os pedidos técnicos normais do
+              browser, como o endereço IP e a zona do mapa visualizada.
+            </p>
+            <p className="landing-privacy-safeguards">
+              Aplicamos controlos de acesso e minimização de dados, mas nenhum serviço online pode prometer
+              risco zero. Partilha apenas o que consideras necessário e evita incluir dados sensíveis no
+              perfil, chat ou formulário.
+            </p>
           </div>
           <Button appearance="secondary" className="landing-secondary-button" onClick={onSignUp}>
             {authenticated ? "Completar o perfil" : "Começar com segurança"} <ArrowRight24Regular />
@@ -350,7 +361,7 @@ export function LandingPage({
           <div className="landing-terms-grid">
             <article><h3>O que a plataforma faz</h3><p>A Casa Comigo ajuda pessoas a descobrir potenciais colegas de casa e a conversar. Não é agência imobiliária, não anuncia nem inspeciona imóveis, não representa utilizadores e não garante matches, alojamento, segurança ou elegibilidade para apoios.</p></article>
             <article><h3>Responsabilidade dos utilizadores</h3><p>Use informação verdadeira, respeite os outros e não publique conteúdo ilegal, discriminatório, enganador ou abusivo. Verifique a identidade, o imóvel e as condições por meios próprios; não envie dinheiro antes de confirmar a legitimidade do anúncio e do destinatário.</p></article>
-            <article><h3>Dados e privacidade</h3><p>Partilhe apenas o que é necessário. A zona e o perfil são usados para descoberta conforme as definições escolhidas; nunca publique dados bancários, documentos de identificação ou moradas privadas no perfil ou chat. Pode pedir ajuda através do contacto abaixo.</p></article>
+            <article><h3>Dados, cookies e privacidade</h3><p>Não usamos cookies de terceiros para publicidade, análise ou rastreamento. A sessão de autenticação é guardada no armazenamento local do browser. A localização exata não é apresentada no perfil público, mas a plataforma usa dados fornecidos para calcular compatibilidade. O mapa usa OpenStreetMap e recebe os pedidos do browser. Há medidas de segurança e controlo de acesso, mas não é correto prometer privacidade ou segurança absolutas. Partilhe apenas o necessário e não inclua dados bancários, documentos de identificação ou moradas privadas em perfis e conversas.</p></article>
           </div>
           <p className="landing-legal-note">Este resumo é informativo, não é aconselhamento jurídico e ainda deve ser revisto e completado para refletir o responsável pelo tratamento, retenção de dados, exercício de direitos e regras de reclamação aplicáveis ao serviço.</p>
         </section>
@@ -370,7 +381,12 @@ export function LandingPage({
             <Button appearance="primary" className="landing-primary-button" type="submit" disabled={contactBusy}>
               {contactBusy ? "A enviar…" : "Enviar mensagem"}
             </Button>
-            <small>O formulário é limitado para reduzir mensagens automáticas. Ao enviar, o teu nome, email e mensagem serão tratados para responder ao pedido.</small>
+            <small>
+              O formulário é limitado para reduzir mensagens automáticas. O nome, email e mensagem serão
+              usados para responder ao pedido e enviados através do fornecedor de email SendGrid. Não
+              incluas palavras-passe, dados bancários, documentos de identificação ou outra informação
+              sensível.
+            </small>
           </form>
         </section>
       </main>

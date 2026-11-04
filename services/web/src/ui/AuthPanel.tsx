@@ -108,7 +108,10 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
         if (resetError) {
           setError(authErrorMessage(resetError.message));
         } else {
-          setNotice("Se existir uma conta associada a este email, receberás uma mensagem com instruções para redefinir a palavra-passe.");
+          const localInbucketHint = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+            ? " Em desenvolvimento local, consulta também o Inbucket em http://localhost:54324."
+            : "";
+          setNotice(`Se existir uma conta associada a este email, receberás uma mensagem com instruções para redefinir a palavra-passe. Consulta a caixa de entrada e o spam.${localInbucketHint}`);
         }
         return;
       }

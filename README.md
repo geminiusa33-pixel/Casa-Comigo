@@ -81,7 +81,9 @@ Não partilhe nem adicione a chave privada ao Git. Depois de iniciar a aplicaç�
 
 O formulário **Esqueceste-te da palavra-passe?** envia o pedido através do Supabase Auth. A pessoa recebe um link, escolhe e confirma uma nova palavra-passe na aplicação. A API Casa Comigo não recebe nem guarda palavras-passe, nem precisa da chave SendGrid.
 
-Para produção, configura o envio no projeto Supabase alojado:
+**Teste local:** inicia o Supabase com `npx supabase start`, pede a recuperação usando o email da conta e consulta a caixa do Inbucket em `http://localhost:54324`. O Inbucket captura os emails da instância local; não tens de configurar SendGrid para este teste. O URL de retorno local `http://localhost:5173` já está permitido em `supabase/config.toml`. Abre o link mais recente do Inbucket no mesmo browser em que a app está a correr, escolhe uma nova palavra-passe e confirma.
+
+**Produção:** configura o envio no projeto Supabase alojado:
 
 1. No SendGrid, autentica um domínio ou verifica um endereço de remetente e cria uma API key com permissão de envio de email. Guarda a chave como segredo.
 2. No painel do Supabase, abre as definições de **Authentication / SMTP** e ativa o SMTP personalizado. Usa:
@@ -102,7 +104,17 @@ O formulário público de contacto envia mensagens pela API .NET, usando a API v
 1. No SendGrid, autentique o domínio/remetente e crie uma API key com permissão **Mail Send**.
 2. No serviço que aloja a API, configure `SendGrid__ApiKey`, `SendGrid__FromEmail`, `SendGrid__FromName=Casa Comigo` e `Contact__ToEmail=tiagopereiracode@gmail.com`. Use os campos correspondentes em `.env.api.production.example` como referência, mas não publique valores reais nesse ficheiro.
 3. Configure `Cors__AllowedOrigins__0` com o URL HTTPS exato do frontend; se tiver mais origens, use índices `__1`, `__2`, etc. Reinicie a API depois de guardar a configuração.
-4. Em desenvolvimento local, configure as mesmas variáveis `SendGrid__...` no terminal da API. Sem configuração, o endpoint responde explicitamente com `503`; por IP, o formulário permite no máximo três envios por cada 15 minutos. Teste com `services/api/src/CasaComigo.Api/Contact.http`.
+4. Em desenvolvimento local, coloca as variáveis no terminal que executa a API (não no terminal Vite), substituindo os marcadores pelos teus valores, e reinicia a API:
+
+   ```powershell
+   $env:SendGrid__ApiKey = "<a tua API key do SendGrid>"
+   $env:SendGrid__FromEmail = "<remetente verificado no SendGrid>"
+   $env:SendGrid__FromName = "Casa Comigo"
+   $env:Contact__ToEmail = "tiagopereiracode@gmail.com"
+   dotnet run --project services\api\src\CasaComigo.Api
+   ```
+
+   Não envies a chave por chat nem a guardes em ficheiros versionados. Sem configuração, o endpoint responde explicitamente com `503`; por IP, o formulário permite no máximo três envios por cada 15 minutos. Testa o envio real a partir do formulário de contacto ou com `services/api/src/CasaComigo.Api/Contact.http`. Se falhar, consulta o terminal da API: a resposta não expõe segredos, mas regista o estado de erro devolvido pelo SendGrid.
 
 Nunca coloque a API key em `services/web/.env.local`, em `VITE_*`, no Git ou no browser. A chave não é necessária para recuperar palavras-passe: esse fluxo usa o SMTP personalizado nas definições do Supabase, conforme a secção anterior.
 
@@ -128,6 +140,10 @@ O perfil permite indicar interesse/situação relativamente ao Porta 65-Jovem. E
 - Configure o domínio HTTPS no SMTP e nos URLs de redirecionamento do Supabase Auth; a API deve aceitar apenas a origem real do frontend em `Cors__AllowedOrigins__0`.
 - Aplique a migration Porta 65 apenas ao projeto Supabase correto, depois de confirmar o destino e a cópia de segurança. Não use `db reset` em produção.
 - Antes do lançamento público, finalize e reveja os termos e a política de privacidade, incluindo identidade do responsável pelo serviço, retenção de dados, exercício de direitos, moderação, segurança, reclamações e obrigações fiscais dos donativos. Faça também testes com contas distintas e revise RLS, autenticação, backups e logs.
+
+### Cookies e privacidade
+
+A aplicação não inclui scripts conhecidos de publicidade, analytics ou rastreamento e não usa cookies de terceiros para esses fins. O cliente Supabase mantém a sessão de autenticação no armazenamento local do browser. O mapa carrega mosaicos do OpenStreetMap; como em qualquer pedido web, o serviço de mapas recebe dados técnicos como o endereço IP e os mosaicos consultados. O formulário de contacto encaminha os dados submetidos através do SendGrid. A localização precisa não é apresentada nos cartões públicos, mas é usada pelo backend para calcular compatibilidade. Existem medidas de controlo de acesso e minimização, mas não prometemos segurança ou privacidade absolutas; não incluas dados sensíveis em perfis, mensagens ou formulários. Antes de lançamento público, transforma este resumo numa política de privacidade completa e revista para o serviço real.
 
 ### Testar registo, login, perfil e matching
 
