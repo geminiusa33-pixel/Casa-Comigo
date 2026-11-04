@@ -1,0 +1,393 @@
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Button, Input, Textarea, MessageBar, MessageBarBody } from "@fluentui/react-components";
+import { createPortal } from "react-dom";
+import {
+  ArrowRight24Regular,
+  Chat24Regular,
+  Dismiss24Regular,
+  Heart24Regular,
+  Home24Regular,
+  Location24Regular,
+  PeopleCommunity24Regular,
+  ShieldCheckmark24Regular,
+} from "@fluentui/react-icons";
+import { apiRequest } from "../api/http";
+
+type Props = {
+  onSignIn: () => void;
+  onSignUp: () => void;
+  authenticated?: boolean;
+  onDiscover?: () => void;
+  onProfile?: () => void;
+  onSignOut?: () => void;
+  showStoryBanner?: boolean;
+  onDismissStoryBanner?: () => void;
+  showSupportBanner?: boolean;
+  onDismissSupportBanner?: () => void;
+};
+
+const steps = [
+  {
+    number: "01",
+    title: "Mostra quem és",
+    text: "Cria um perfil com as tuas rotinas, preferências e o tipo de casa que procuras.",
+  },
+  {
+    number: "02",
+    title: "Encontra o teu match",
+    text: "Descobre pessoas com uma área de procura compatível e gostos de convivência próximos.",
+  },
+  {
+    number: "03",
+    title: "Comecem a conversa",
+    text: "Quando o interesse é recíproco, podem conversar e combinar os próximos passos.",
+  },
+];
+
+export function LandingPage({
+  onSignIn,
+  onSignUp,
+  authenticated = false,
+  onDiscover,
+  onProfile,
+  onSignOut,
+  showStoryBanner = true,
+  onDismissStoryBanner,
+  showSupportBanner = true,
+  onDismissSupportBanner,
+}: Props) {
+  const [localStoryOpen, setLocalStoryOpen] = useState(true);
+  const [localSupportOpen, setLocalSupportOpen] = useState(true);
+  const storyCloseButton = useRef<HTMLButtonElement>(null);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactBusy, setContactBusy] = useState(false);
+  const [contactNotice, setContactNotice] = useState("");
+  const [contactError, setContactError] = useState("");
+
+  async function sendContactMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setContactBusy(true);
+    setContactError("");
+    setContactNotice("");
+    try {
+      await apiRequest<{ message: string }>("/api/public/contact", undefined, {
+        method: "POST",
+        body: JSON.stringify({ name: contactName, email: contactEmail, message: contactMessage }),
+      });
+      setContactNotice("Mensagem enviada. Obrigado pelo contacto.");
+      setContactName("");
+      setContactEmail("");
+      setContactMessage("");
+    } catch (caught) {
+      setContactError(caught instanceof Error ? caught.message : "Não foi possível enviar a mensagem.");
+    } finally {
+      setContactBusy(false);
+    }
+  }
+
+  const donationLinks = [
+    { amount: "3 €", url: import.meta.env.VITE_STRIPE_COFFEE_3_URL },
+    { amount: "5 €", url: import.meta.env.VITE_STRIPE_COFFEE_5_URL },
+    { amount: "10 €", url: import.meta.env.VITE_STRIPE_COFFEE_10_URL },
+  ];
+  const storyOpen = showStoryBanner ?? localStoryOpen;
+  const supportOpen = showSupportBanner ?? localSupportOpen;
+
+  useEffect(() => {
+    if (!storyOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    storyCloseButton.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onDismissStoryBanner?.();
+        setLocalStoryOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [storyOpen, onDismissStoryBanner]);
+
+  function dismissStory() {
+    setLocalStoryOpen(false);
+    onDismissStoryBanner?.();
+  }
+
+  function dismissSupport() {
+    setLocalSupportOpen(false);
+    onDismissSupportBanner?.();
+  }
+
+  return (
+    <div className="landing">
+      {storyOpen && createPortal(
+        <div className="landing-story-overlay">
+          <section
+            className="landing-story-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="landing-story-title"
+            aria-describedby="landing-story-description"
+          >
+            <Button
+              ref={storyCloseButton}
+              className="landing-story-dialog-dismiss"
+              appearance="subtle"
+              icon={<Dismiss24Regular />}
+              aria-label="Fechar história"
+              title="Fechar"
+              onClick={dismissStory}
+            />
+            <span className="landing-eyebrow">Porque nasceu a Casa Comigo</span>
+            <h2 id="landing-story-title">Uma ideia que começou numa experiência pessoal.</h2>
+            <p id="landing-story-description">
+              Sou pai e mudei-me do Porto para Lisboa para estar perto da minha filha. Gostava de poder
+              partilhar com ela uma residência alternada, mas, por enquanto, não consigo suportar sozinho
+              o custo de uma casa que permita essa solução. Esta dificuldade limita o tempo que podemos
+              passar juntos — uma realidade delicada, vivida por muitas famílias, sem que isso tenha de ser
+              culpa de alguém. Criei esta plataforma na esperança de tornar mais fácil encontrar pessoas
+              compatíveis para partilhar casa e, assim, abrir novas possibilidades para quem precisa de
+              conciliar habitação acessível e vida familiar.
+            </p>
+            <p className="landing-story-signature">
+              A plataforma é gratuita nesta fase. Se quiseres apoiar o projeto, podes pagar um café.
+            </p>
+          </section>
+        </div>,
+        document.body,
+      )}
+      <header className="landing-header">
+        <a className="landing-brand" href="#inicio" aria-label="Casa Comigo, início">
+          <span className="landing-brand-mark"><Home24Regular /></span>
+          <span>casa comigo<span className="landing-brand-period">.</span></span>
+        </a>
+        <nav className="landing-nav" aria-label="Navegação da página">
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#privacidade">A nossa abordagem</a>
+          <a href="#apoio">Apoiar</a>
+        </nav>
+        <div className="landing-header-actions">
+          {authenticated ? (
+            <>
+              <Button appearance="subtle" onClick={onProfile}>O meu perfil</Button>
+              <Button appearance="primary" className="landing-primary-button" onClick={onDiscover}>Descobrir <ArrowRight24Regular /></Button>
+              <Button appearance="subtle" onClick={onSignOut}>Sair</Button>
+            </>
+          ) : (
+            <>
+              <Button appearance="subtle" onClick={onSignIn}>Entrar</Button>
+              <Button appearance="primary" className="landing-primary-button" onClick={onSignUp}>Criar conta <ArrowRight24Regular /></Button>
+            </>
+          )}
+        </div>
+      </header>
+
+      <main>
+        <div className="landing-banners">
+          <span id="apoio" className="landing-anchor" />
+          <span id="historia" className="landing-anchor" />
+          {supportOpen && (
+            <section className="landing-top-banner landing-top-banner-support">
+              <div>
+                <span className="landing-eyebrow">Um café ajuda a continuar</span>
+                <h2>O projeto é gratuito. O teu apoio é opcional.</h2>
+                <p>
+                  Se a ideia te for útil, podes contribuir com um pequeno donativo. O pagamento é feito numa
+                  página segura do Stripe. MB WAY e Multibanco só aparecem se estiverem ativados na conta Stripe.
+                </p>
+              </div>
+              <div className="landing-donation-options" aria-label="Opções de donativo">
+                {donationLinks.map(({ amount, url }) => url
+                  ? <a className="landing-donation-link" key={amount} href={url} target="_blank" rel="noreferrer">Pagar um café · {amount}</a>
+                  : <Button key={amount} appearance="secondary" disabled>Pagar um café · {amount}</Button>)}
+                {!donationLinks.some(({ url }) => url) && (
+                  <p>Os pagamentos ainda não estão configurados. Consulte o README para criar os links seguros no Stripe.</p>
+                )}
+              </div>
+              <Button
+                className="landing-banner-dismiss"
+                appearance="subtle"
+                icon={<Dismiss24Regular />}
+                aria-label="Fechar banner de apoio"
+                title="Fechar"
+                onClick={dismissSupport}
+              />
+            </section>
+          )}
+        </div>
+        <section className="landing-hero" id="inicio">
+          <div className="landing-hero-copy">
+            <div className="landing-eyebrow"><span /> Uma forma mais humana de encontrar casa</div>
+            <h1>Encontrar casa começa por encontrar <em>as pessoas certas.</em></h1>
+            <p className="landing-lede">
+              Junta-te a pessoas que procuram na tua zona e que combinam com a forma como gostas de viver.
+              Menos acaso. Mais afinidade.
+            </p>
+            <div className="landing-hero-actions">
+              <Button appearance="primary" className="landing-primary-button" size="large" onClick={onSignUp}>
+                {authenticated ? "Completar o meu perfil" : "Criar o meu perfil"} <ArrowRight24Regular />
+              </Button>
+              <Button appearance="subtle" size="large" onClick={onSignIn}>
+                {authenticated ? "Ir para Descobrir" : "Já tenho conta"}
+              </Button>
+            </div>
+            <div className="landing-trust-line">
+              <ShieldCheckmark24Regular />
+              <span>A tua localização exata permanece privada.</span>
+            </div>
+          </div>
+
+          <div className="landing-visual" aria-label="Pré-visualização de perfis de pessoas à procura de casa">
+            <div className="landing-visual-orbit landing-visual-orbit-one" />
+            <div className="landing-visual-orbit landing-visual-orbit-two" />
+            <div className="landing-visual-note"><span className="landing-live-dot" /> Uma casa começa por aqui</div>
+            <article className="landing-profile-card landing-profile-main">
+              <div className="landing-profile-art landing-profile-art-one">
+                <span className="landing-art-sun" />
+                <span className="landing-art-window" />
+                <span className="landing-art-plant" aria-hidden="true" />
+                <span className="landing-art-person">M</span>
+              </div>
+              <div className="landing-profile-content">
+                <div className="landing-profile-heading"><strong>Mariana, 27</strong><span>Perfil exemplo</span></div>
+                <div className="landing-profile-location"><Location24Regular /> Lisboa · zona de procura</div>
+                <p>Gosto de cozinhar, plantas e domingos sem pressa.</p>
+                <div className="landing-profile-tags"><span>Rotinas tranquilas</span><span>Procura 1 pessoa</span></div>
+              </div>
+              <div className="landing-card-heart"><Heart24Regular /></div>
+            </article>
+            <article className="landing-profile-card landing-profile-secondary">
+              <div className="landing-mini-avatar">R</div>
+              <div><strong>Rui, 30</strong><span>Também procura em Lisboa</span></div>
+              <span className="landing-match-icon"><Heart24Regular /></span>
+            </article>
+            <div className="landing-visual-caption">Pré-visualização ilustrativa</div>
+          </div>
+        </section>
+
+        <section className="landing-principles" aria-label="O que torna a procura diferente">
+          <div><PeopleCommunity24Regular /><span>Pessoas antes das paredes</span></div>
+          <div><Location24Regular /><span>Procuras na tua zona</span></div>
+          <div><Chat24Regular /><span>Conversa só quando há match</span></div>
+        </section>
+
+        <section className="landing-how" id="como-funciona">
+          <div className="landing-section-intro">
+            <span className="landing-eyebrow">Simples desde o primeiro passo</span>
+            <h2>Uma boa partilha começa com uma boa combinação.</h2>
+            <p>Sem deslizar por anúncios sem contexto. Primeiro conheces as pessoas; depois decidem juntos o que faz sentido.</p>
+          </div>
+          <div className="landing-steps">
+            {steps.map((step) => (
+              <article className="landing-step" key={step.number}>
+                <span className="landing-step-number">{step.number}</span>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="landing-privacy" id="privacidade">
+          <div className="landing-privacy-icon"><ShieldCheckmark24Regular /></div>
+          <div>
+            <span className="landing-eyebrow">Privacidade, desde o início</span>
+            <h2>A tua localização é tua.</h2>
+            <p>Usamos a área de procura para sugerir pessoas compatíveis. A morada e as coordenadas exatas não aparecem no teu perfil público.</p>
+          </div>
+          <Button appearance="secondary" className="landing-secondary-button" onClick={onSignUp}>
+            {authenticated ? "Completar o perfil" : "Começar com segurança"} <ArrowRight24Regular />
+          </Button>
+        </section>
+
+        <section className="landing-rental-info" id="arrendamento">
+          <span className="landing-eyebrow">Informação para uma decisão informada</span>
+          <h2>Antes de partilhar casa</h2>
+          <div className="landing-info-grid">
+            <article>
+              <h3>Contrato e recibos</h3>
+              <p>
+                Antes de pagar ou mudar, confirme por escrito quem será parte no contrato, como se divide
+                a renda, que despesas estão incluídas e como serão emitidos os recibos. A emissão de recibos
+                separados depende da relação contratual e do enquadramento fiscal; não é garantida em todos
+                os modelos de partilha.
+              </p>
+              <a href="https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/questoes_frequentes/Pages/default.aspx" target="_blank" rel="noreferrer">Portal das Finanças: questões frequentes</a>
+            </article>
+            <article>
+              <h3>Direitos e deveres</h3>
+              <p>
+                A lei do arrendamento prevê regras sobre contrato, pagamento, conservação do imóvel,
+                comunicações e cessação. Leia o contrato com atenção, guarde comprovativos e esclareça
+                responsabilidades com o senhorio antes de assinar.
+              </p>
+              <a href="https://www.pgdlisboa.pt/leis/lei_mostra_articulado.php?nid=691&tabela=leis" target="_blank" rel="noreferrer">Novo Regime do Arrendamento Urbano</a>
+            </article>
+            <article>
+              <h3>Porta 65-Jovem</h3>
+              <p>
+                O programa destina-se a jovens dos 18 aos 35 anos e pode apoiar o pagamento da renda de
+                candidatos que cumpram os requisitos em vigor. Rendimentos, contrato e composição do
+                agregado também podem ser relevantes; assinalar
+                interesse no perfil não significa que a candidatura seja elegível ou aprovada.
+              </p>
+              <a href="https://www.portaldahabitacao.pt/porta-65-jovem" target="_blank" rel="noreferrer">Consultar condições no Portal da Habitação</a>
+            </article>
+          </div>
+          <p className="landing-legal-note">Esta informação é geral, pode mudar e não substitui aconselhamento jurídico ou fiscal. Confirme sempre as regras e a sua situação junto das entidades oficiais ou de um profissional qualificado.</p>
+        </section>
+
+        <section className="landing-terms" id="termos">
+          <span className="landing-eyebrow">Termos e utilização</span>
+          <h2>Regras claras para uma comunidade mais segura.</h2>
+          <div className="landing-terms-grid">
+            <article><h3>O que a plataforma faz</h3><p>A Casa Comigo ajuda pessoas a descobrir potenciais colegas de casa e a conversar. Não é agência imobiliária, não anuncia nem inspeciona imóveis, não representa utilizadores e não garante matches, alojamento, segurança ou elegibilidade para apoios.</p></article>
+            <article><h3>Responsabilidade dos utilizadores</h3><p>Use informação verdadeira, respeite os outros e não publique conteúdo ilegal, discriminatório, enganador ou abusivo. Verifique a identidade, o imóvel e as condições por meios próprios; não envie dinheiro antes de confirmar a legitimidade do anúncio e do destinatário.</p></article>
+            <article><h3>Dados e privacidade</h3><p>Partilhe apenas o que é necessário. A zona e o perfil são usados para descoberta conforme as definições escolhidas; nunca publique dados bancários, documentos de identificação ou moradas privadas no perfil ou chat. Pode pedir ajuda através do contacto abaixo.</p></article>
+          </div>
+          <p className="landing-legal-note">Este resumo é informativo, não é aconselhamento jurídico e ainda deve ser revisto e completado para refletir o responsável pelo tratamento, retenção de dados, exercício de direitos e regras de reclamação aplicáveis ao serviço.</p>
+        </section>
+
+        <section className="landing-contact" id="contactos">
+          <div>
+            <span className="landing-eyebrow">Dúvidas, sugestões ou ajuda</span>
+            <h2>Fala connosco.</h2>
+            <p>As mensagens são encaminhadas para <a href="mailto:tiagopereiracode@gmail.com">tiagopereiracode@gmail.com</a>.</p>
+          </div>
+          <form onSubmit={(event) => void sendContactMessage(event)}>
+            {contactError && <MessageBar intent="error"><MessageBarBody>{contactError}</MessageBarBody></MessageBar>}
+            {contactNotice && <MessageBar intent="success"><MessageBarBody>{contactNotice}</MessageBarBody></MessageBar>}
+            <label><span>Nome</span><Input value={contactName} maxLength={100} required onChange={(_, data) => setContactName(data.value)} /></label>
+            <label><span>Email para resposta</span><Input type="email" value={contactEmail} maxLength={254} required onChange={(_, data) => setContactEmail(data.value)} /></label>
+            <label><span>Mensagem</span><Textarea value={contactMessage} maxLength={5000} minLength={10} required resize="vertical" onChange={(_, data) => setContactMessage(data.value)} /></label>
+            <Button appearance="primary" className="landing-primary-button" type="submit" disabled={contactBusy}>
+              {contactBusy ? "A enviar…" : "Enviar mensagem"}
+            </Button>
+            <small>O formulário é limitado para reduzir mensagens automáticas. Ao enviar, o teu nome, email e mensagem serão tratados para responder ao pedido.</small>
+          </form>
+        </section>
+      </main>
+
+      <footer className="landing-footer">
+        <a className="landing-brand" href="#inicio">
+          <span className="landing-brand-mark"><Home24Regular /></span>
+          <span>casa comigo<span className="landing-brand-period">.</span></span>
+        </a>
+        <span>Encontrar pessoas. Sentir-se em casa.</span>
+        <nav aria-label="Informação legal e contacto">
+          <a href="#termos">Termos</a>
+          <a href="#arrendamento">Informação de arrendamento</a>
+          <a href="#contactos">Contactos</a>
+        </nav>
+        <span>© Casa Comigo</span>
+      </footer>
+    </div>
+  );
+}

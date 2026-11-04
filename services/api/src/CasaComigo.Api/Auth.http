@@ -1,5 +1,11 @@
 @baseUrl = http://localhost:5080
 @accessToken = paste-a-local-supabase-access-token-here
+@otherProfileId = replace-with-a-visible-compatible-profile-guid
+@matchId = replace-with-a-match-guid
+@notificationId = replace-with-a-notification-guid
+@pushEndpoint = replace-with-browser-push-endpoint
+@p256dh = replace-with-browser-p256dh-key
+@authKey = replace-with-browser-auth-key
 
 ### A request without a token must be rejected.
 GET {{baseUrl}}/api/auth/session
@@ -7,3 +13,200 @@ GET {{baseUrl}}/api/auth/session
 ### Paste the access_token from a successful Supabase Auth response.
 GET {{baseUrl}}/api/auth/session
 Authorization: Bearer {{accessToken}}
+
+### Read your own profile and private search coordinates.
+GET {{baseUrl}}/api/profile
+Authorization: Bearer {{accessToken}}
+
+### List recent notifications
+GET {{baseUrl}}/api/notifications
+Authorization: Bearer {{accessToken}}
+
+### Mark all notifications as read
+PUT {{baseUrl}}/api/notifications/read-all
+Authorization: Bearer {{accessToken}}
+
+### Mark one notification as read
+PUT {{baseUrl}}/api/notifications/{{notificationId}}/read
+Authorization: Bearer {{accessToken}}
+
+### Get the VAPID public key needed for browser push
+GET {{baseUrl}}/api/notifications/push/vapid-public-key
+Authorization: Bearer {{accessToken}}
+
+### Register a browser push subscription
+POST {{baseUrl}}/api/notifications/push-subscriptions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "endpoint": "{{pushEndpoint}}",
+  "p256dh": "{{p256dh}}",
+  "auth": "{{authKey}}"
+}
+
+### Remove a browser push subscription
+DELETE {{baseUrl}}/api/notifications/push-subscriptions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "endpoint": "{{pushEndpoint}}"
+}
+
+### Update your living preferences.
+PUT {{baseUrl}}/api/profile
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "displayName": "Ana",
+  "bio": "Procuro uma casa tranquila.",
+  "preferredHousemates": 4,
+  "genderPreference": "any",
+  "hasPets": false,
+  "interests": ["caminhadas", "cinema"],
+  "opinions": "",
+  "workSchedule": "Dias úteis",
+  "cookingHabits": "Cozinho algumas vezes por semana",
+  "rentContributionRange": "501-600",
+  "leaseHolderPreference": "joint",
+  "billsPreference": "split_equally",
+  "furnishedPreference": "furnished",
+  "preferredBathrooms": 1,
+  "preferredBedrooms": 2,
+  "homeTypePreference": "apartment",
+  "moveInTiming": "one_to_three_months",
+  "minimumLeaseMonths": 12,
+  "discoveryVisible": false
+}
+
+### Set a manually selected area. Exact coordinates are private.
+PUT {{baseUrl}}/api/profile/search-area
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "latitude": 38.7223,
+  "longitude": -9.1393,
+  "radiusKm": 25,
+  "areaLabel": "Lisboa",
+  "locationSource": "manual"
+}
+
+### List profiles with mutually compatible search areas.
+GET {{baseUrl}}/api/discovery/profiles
+Authorization: Bearer {{accessToken}}
+
+### Like an eligible profile; a match is created only after a reciprocal like.
+POST {{baseUrl}}/api/profiles/{{otherProfileId}}/likes
+Authorization: Bearer {{accessToken}}
+
+### Pass on a profile; it returns to discovery after three days.
+POST {{baseUrl}}/api/profiles/{{otherProfileId}}/passes
+Authorization: Bearer {{accessToken}}
+
+### List reciprocal matches for the current user.
+GET {{baseUrl}}/api/matches
+Authorization: Bearer {{accessToken}}
+
+### Cancel a match; the conversation is removed and both users may rediscover each other.
+DELETE {{baseUrl}}/api/matches/{{matchId}}
+Authorization: Bearer {{accessToken}}
+
+### Read the latest messages for one of your matches.
+GET {{baseUrl}}/api/matches/{{matchId}}/messages
+Authorization: Bearer {{accessToken}}
+
+### Send a message to a match.
+POST {{baseUrl}}/api/matches/{{matchId}}/messages
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "body": "Ola! Tambem procuro casa nesta zona."
+}
+
+### Block another profile; discovery and existing match conversations stop.
+POST {{baseUrl}}/api/profiles/{{otherProfileId}}/blocks
+Authorization: Bearer {{accessToken}}
+
+### List profiles blocked by the current account.
+GET {{baseUrl}}/api/profile/blocks
+Authorization: Bearer {{accessToken}}
+
+### Unblock a profile.
+DELETE {{baseUrl}}/api/profiles/{{otherProfileId}}/blocks
+Authorization: Bearer {{accessToken}}
+
+### Report a profile; repeated reports are limited to one every ten minutes.
+POST {{baseUrl}}/api/profiles/{{otherProfileId}}/reports
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": "Conteudo suspeito ou comportamento inadequado."
+}
+
+@groupId = replace-with-a-housing-group-guid
+@joinRequestId = replace-with-a-pending-join-request-guid
+
+### List groups you belong to, including pending join requests and votes.
+GET {{baseUrl}}/api/housing-groups
+Authorization: Bearer {{accessToken}}
+
+### Rename a group; only current members can make this change.
+PUT {{baseUrl}}/api/housing-groups/{{groupId}}/name
+Authorization: ******
+Content-Type: application/json
+
+{
+  "name": "Casa perto do centro"
+}
+
+### Leave a group; an empty group is closed automatically.
+DELETE {{baseUrl}}/api/housing-groups/{{groupId}}/members/me
+Authorization: ******
+
+### Discover open groups with available places and a mutually compatible area.
+GET {{baseUrl}}/api/housing-groups/discovery
+Authorization: Bearer {{accessToken}}
+
+### Request to join an open group; all current members must approve.
+POST {{baseUrl}}/api/housing-groups/{{groupId}}/join-requests
+Authorization: Bearer {{accessToken}}
+
+### Approve a pending join request.
+POST {{baseUrl}}/api/housing-groups/join-requests/{{joinRequestId}}/votes
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "accept": true
+}
+
+### Decline a pending join request; one negative vote closes the request.
+POST {{baseUrl}}/api/housing-groups/join-requests/{{joinRequestId}}/votes
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "accept": false
+}
+
+### Confirm that the group is complete; it closes after every member confirms.
+POST {{baseUrl}}/api/housing-groups/{{groupId}}/completion-confirmations
+Authorization: Bearer {{accessToken}}
+
+### Read the latest group messages.
+GET {{baseUrl}}/api/housing-groups/{{groupId}}/messages
+Authorization: Bearer {{accessToken}}
+
+### Send a message to the group.
+POST {{baseUrl}}/api/housing-groups/{{groupId}}/messages
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "body": "Olá! Vamos combinar uma visita em conjunto?"
+}

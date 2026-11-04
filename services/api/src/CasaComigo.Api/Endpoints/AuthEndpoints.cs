@@ -11,13 +11,14 @@ public static class AuthEndpoints
     {
         endpoints.MapGet("/auth/session", Results<Ok<AuthSessionResponse>, UnauthorizedHttpResult> (ClaimsPrincipal user) =>
             {
-                var userId = user.FindFirstValue("sub");
+                var userId = user.FindFirstValue("sub")
+                    ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (string.IsNullOrWhiteSpace(userId))
                     return TypedResults.Unauthorized();
 
                 return TypedResults.Ok(new AuthSessionResponse(
                     userId,
-                    user.FindFirstValue("email")));
+                    user.FindFirstValue("email") ?? user.FindFirstValue(ClaimTypes.Email)));
             })
             .WithName("GetAuthenticatedSession")
             .WithSummary("Confirma a sessão autenticada")

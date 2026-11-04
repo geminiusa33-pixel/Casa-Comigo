@@ -16,17 +16,16 @@ Fundação para uma plataforma de partilha de casa. Em desenvolvimento, a aplica
 
    ```powershell
    npx supabase start
-   npx supabase db reset
    ```
 
-   Isto cria serviços **locais em Docker**; não usa nem altera o projeto cloud da sua organização. `db reset` recria a base local e apaga os dados que nela existirem. A migration cria schema e políticas, sem dados de demonstração.
+   Isto inicia serviços **locais em Docker**; não usa nem altera o projeto cloud da sua organização.
 3. Consulte os valores locais:
 
    ```powershell
    npx supabase status
    ```
 
-   Use a `API URL` e a chave pública `anon`/publishable local para a interface, e o `JWT secret` local para a API. Não use a chave `service_role`/secret no browser. A password padrão da base local é `postgres`.
+   Use a `API URL` e a chave pública `anon`/publishable local para a interface. Não use a chave `service_role`/secret no browser. A password padrão da base local é `postgres`.
 
    Para emails de confirmação locais, abra o Inbucket em `http://localhost:54324`.
 4. Aplique migrations que ainda não foram executadas, sem recriar a base nem eliminar contas:
@@ -51,23 +50,103 @@ Fundação para uma plataforma de partilha de casa. Em desenvolvimento, a aplica
    $env:ASPNETCORE_URLS = "http://localhost:5080"
    $env:ConnectionStrings__Supabase = "Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres"
    $env:SUPABASE_URL = "http://127.0.0.1:54321"
-   $env:SUPABASE_JWT_ISSUER = "supabase"
-   $env:SUPABASE_JWT_SECRET = "<JWT secret local mostrado por supabase status>"
    dotnet run --project services/api/src/CasaComigo.Api
    ```
 
-   `SUPABASE_JWT_SECRET` é o segredo de assinatura JWT da instância local — não é a chave API `service_role`/secret. Substitua o placeholder pelo valor local, sem o guardar no Git. Verifique `http://localhost:5080/health`.
+   Em `Development`, a API usa por omissão a base Supabase local em `127.0.0.1:54322` com a password local padrão `postgres`; uma `ConnectionStrings__Supabase` definida no ambiente substitui esse valor. Para outros ambientes, a connection string é obrigatória. A API valida as assinaturas com as chaves públicas JWKS publicadas pela instância Supabase local; não precisa de copiar segredos JWT ou chaves `service_role`. Verifique `http://localhost:5080/health`.
 
-### Testar registo e login
+Se preferir, basta executar `dotnet run --project services/api/src/CasaComigo.Api`: o perfil de arranque local configura `Development`, a API em `http://localhost:5080` e o Supabase local. Em `Development`, a base local usa a password padrão `postgres`; se a alterou, defina `ConnectionStrings__Supabase` no terminal antes de arrancar. Fora de `Development`, a connection string é obrigatória.
+
+### Notificações
+
+A aplicação guarda notificações de novas mensagens individuais e de grupo, novos matches, pedidos de entrada em grupos e respetivas decisões. O ícone no topo mostra as não lidas, permite marcá-las como lidas e abre a conversa ou grupo relacionado. A lista atualiza automaticamente.
+
+Para permitir notificações push do browser, gere uma chave VAPID uma única vez:
+
+```powershell
+dotnet run --project services/api/src/CasaComigo.Api -- --generate-vapid-keys
+```
+
+Configure no mesmo terminal da API as duas chaves impressas e o assunto VAPID (um endereço de email ou URL de contacto), antes de iniciar `dotnet run`:
+
+```powershell
+$env:WebPush__VapidPublicKey = "<chave pública gerada>"
+$env:WebPush__VapidPrivateKey = "<chave privada gerada>"
+$env:WebPush__VapidSubject = "mailto:contacto@exemplo.pt"
+```
+
+Não partilhe nem adicione a chave privada ao Git. Depois de iniciar a aplicação, abra o sino de notificações e escolha **Ativar notificações do browser**; o browser pedirá autorização. Push requer `localhost` ou HTTPS e só será enviado aos browsers que o utilizador autorizou. A aplicação também continua a mostrar as notificações dentro da própria interface.
+
+### Recuperação de palavra-passe com SendGrid
+
+O formulário **Esqueceste-te da palavra-passe?** envia o pedido através do Supabase Auth. A pessoa recebe um link, escolhe e confirma uma nova palavra-passe na aplicação. A API Casa Comigo não recebe nem guarda palavras-passe, nem precisa da chave SendGrid.
+
+Para produção, configura o envio no projeto Supabase alojado:
+
+1. No SendGrid, autentica um domínio ou verifica um endereço de remetente e cria uma API key com permissão de envio de email. Guarda a chave como segredo.
+2. No painel do Supabase, abre as definições de **Authentication / SMTP** e ativa o SMTP personalizado. Usa:
+   - Host: `smtp.sendgrid.net`
+   - Porta: `587` (STARTTLS)
+   - Utilizador: `apikey`
+   - Palavra-passe: a API key do SendGrid
+   - Remetente: o endereço verificado no SendGrid
+3. Em **Authentication / URL Configuration**, define o URL do site publicado e acrescenta os URLs da aplicação às listas de redirecionamento permitidas. Para desenvolvimento local, permite `http://localhost:5173`; em produção, permite também o domínio HTTPS da aplicação.
+4. Personaliza o template de recuperação de palavra-passe em **Authentication / Email Templates**, mantendo o link de ação de recuperação fornecido pelo Supabase (`{{ .ConfirmationURL }}`).
+
+Não coloques a API key do SendGrid em `services/web/.env.local`, em variáveis `VITE_*`, no código da aplicação, nem na API Casa Comigo: as credenciais SMTP ficam apenas nas definições seguras do projeto Supabase. No Supabase local, os emails de recuperação continuam a ser capturados pelo Inbucket em `http://localhost:54324`; o SendGrid só é necessário para entrega de email no ambiente alojado.
+
+### Formulário de contacto com SendGrid
+
+O formulário público de contacto envia mensagens pela API .NET, usando a API v3 do SendGrid. O destinatário é configurado no servidor e o endereço de resposta é o email que a pessoa indicar.
+
+1. No SendGrid, autentique o domínio/remetente e crie uma API key com permissão **Mail Send**.
+2. No serviço que aloja a API, configure `SendGrid__ApiKey`, `SendGrid__FromEmail`, `SendGrid__FromName=Casa Comigo` e `Contact__ToEmail=tiagopereiracode@gmail.com`. Use os campos correspondentes em `.env.api.production.example` como referência, mas não publique valores reais nesse ficheiro.
+3. Configure `Cors__AllowedOrigins__0` com o URL HTTPS exato do frontend; se tiver mais origens, use índices `__1`, `__2`, etc. Reinicie a API depois de guardar a configuração.
+4. Em desenvolvimento local, configure as mesmas variáveis `SendGrid__...` no terminal da API. Sem configuração, o endpoint responde explicitamente com `503`; por IP, o formulário permite no máximo três envios por cada 15 minutos. Teste com `services/api/src/CasaComigo.Api/Contact.http`.
+
+Nunca coloque a API key em `services/web/.env.local`, em `VITE_*`, no Git ou no browser. A chave não é necessária para recuperar palavras-passe: esse fluxo usa o SMTP personalizado nas definições do Supabase, conforme a secção anterior.
+
+### Donativos opcionais com Stripe Payment Links
+
+Para este MVP foi escolhida a opção sem código de pagamento no backend:
+
+1. Crie/ative a conta Stripe e complete os dados de negócio solicitados no Dashboard.
+2. Em **Payment Links**, crie três links de donativo pontual em EUR: 3 €, 5 € e 10 €. Ative MB WAY e Multibanco nas definições de métodos de pagamento e confirme que o Dashboard permite esses métodos para cada link/conta.
+3. Copie os URLs públicos para `VITE_STRIPE_COFFEE_3_URL`, `VITE_STRIPE_COFFEE_5_URL` e `VITE_STRIPE_COFFEE_10_URL` nas variáveis do frontend local ou do projeto Vercel e volte a publicar o frontend. Estes URLs são concebidos para partilha; não são chaves secretas. A aplicação não necessita de `STRIPE_SECRET_KEY`.
+4. Teste primeiro com os métodos de teste oferecidos pela Stripe. Só ative pagamentos reais quando a conta estiver verificada e os termos, contacto, privacidade e informação fiscal do projeto estiverem revistos.
+
+MB WAY normalmente confirma o pagamento de forma imediata; Multibanco é um método com confirmação atrasada — a pessoa pode pagar o talão mais tarde. A página de retorno do Stripe não deve ser interpretada como prova de que um pagamento Multibanco foi liquidado. A elegibilidade e disponibilidade dos métodos dependem da conta e das definições Stripe. Consulte a [documentação de Payment Links](https://docs.stripe.com/payment-links), [MB WAY](https://docs.stripe.com/payments/mb-way) e [Multibanco](https://docs.stripe.com/payments/multibanco).
+
+### Porta 65-Jovem e informação de arrendamento
+
+O perfil permite indicar interesse/situação relativamente ao Porta 65-Jovem. Esta autoavaliação é apresentada a matches e membros do grupo — não aparece na descoberta — e nunca certifica elegibilidade. O programa destina-se a jovens dos 18 aos 35 anos, mas a candidatura depende dos restantes requisitos em vigor; confirme-os no [Portal da Habitação](https://www.portaldahabitacao.pt/porta-65-jovem). A página inicial também inclui informação geral sobre contrato, recibos e arrendamento; ela não substitui aconselhamento jurídico/fiscal nem constitui uma interpretação vinculativa das regras.
+
+### Preparação para publicar
+
+- Aloje a API .NET e configure as variáveis server-side em `.env.api.production.example` no gestor de segredos do host. Não carregue esse ficheiro para o host como se fosse uma fonte de segredos.
+- No Vercel, configure `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e, quando existirem, os três URLs de Stripe Payment Links. Variáveis `VITE_*` são públicas e ficam incluídas no bundle do browser.
+- Configure o domínio HTTPS no SMTP e nos URLs de redirecionamento do Supabase Auth; a API deve aceitar apenas a origem real do frontend em `Cors__AllowedOrigins__0`.
+- Aplique a migration Porta 65 apenas ao projeto Supabase correto, depois de confirmar o destino e a cópia de segurança. Não use `db reset` em produção.
+- Antes do lançamento público, finalize e reveja os termos e a política de privacidade, incluindo identidade do responsável pelo serviço, retenção de dados, exercício de direitos, moderação, segurança, reclamações e obrigações fiscais dos donativos. Faça também testes com contas distintas e revise RLS, autenticação, backups e logs.
+
+### Testar registo, login, perfil e matching
 
 Abra `http://localhost:5173`, escolha **Registar**, e crie uma conta com nome, email e palavra-passe de pelo menos 8 caracteres. Se for pedido para confirmar o email, consulte `http://localhost:54324`; depois volte à aplicação e inicie sessão. Após entrar, a interface envia o token de acesso para `GET /api/auth/session`. Uma confirmação na página indica que a API local validou esse token. O trigger da migration cria automaticamente o perfil inicial com o nome indicado no registo. A palavra-passe é tratada pelo Supabase Auth; a API Casa Comigo não a recebe.
+
+Em **Descobrir**, use **Ver até 5 perfis anteriores** para consultar perfis rejeitados há mais de três dias ou pessoas de grupos concluídos. A opção respeita os mesmos critérios de visibilidade, zona e escalão de renda, e não inclui pessoas com quem já tem um match nem membros de grupos ativos. No separador **Conversas**, aparecem apenas matches e grupos ativos; o contador de notificações fica no sino.
+
+Abra **Perfil** para adicionar uma foto JPEG, PNG ou WebP (até 10 MB), que aparece no ícone da conta, na descoberta e nos matches. As fotos ficam num bucket privado e só são servidas ao próprio utilizador, a perfis geograficamente elegíveis ou a membros/candidatos compatíveis de um grupo. No mesmo ecrã pode editar a apresentação e as preferências de habitação: número total de pessoas na casa (incluindo o próprio), escalão obrigatório de contribuição mensal para renda (200–300 €, 301–400 €, 401–500 € ou 501–600 €), titular do contrato, divisão de despesas/recibos, mobília, quartos, casas de banho, tipo de casa, prazo de mudança e duração mínima do contrato. Os perfis individuais e grupos só são sugeridos quando o escalão de renda coincide exatamente; os totais mostram a soma dos limites inferiores e superiores dos escalões escolhidos. Perfis antigos ficam sem escalão até o utilizador escolher um, e não aparecem na descoberta nesse intervalo. O raio de procura é escolhido em passos de 5 km, entre 5 e 50 km. A lotação comum cria um grupo quando ocorre o primeiro match; as restantes preferências são informativas e não impedem matches. A zona tem de ser compatível nos dois sentidos com cada pessoa do grupo. A localização pode ser obtida pelo browser apenas depois de carregar no botão GPS e aceitar a permissão, ou escolhida clicando no mapa e arrastando o marcador; também pode ser inserida manualmente. O mapa usa mosaicos OpenStreetMap servidos por openstreetmap.fr e precisa de ligação à internet. O serviço de mapas recebe pedidos relativos à área visível, mas os dados do perfil não são enviados para esse serviço. Guarde um nome de área aproximada, coordenadas e raio; as coordenadas são devolvidas apenas ao dono do perfil. Ative a opção de descoberta para aparecer a outros utilizadores. Para testar matching e chat, crie duas contas locais, complete e ative ambos os perfis com escalões de renda iguais e áreas/raios mutuamente compatíveis, depois envie gostos pelos cartões em **Descobrir**. O match só aparece se os dois gostarem. Se ambas as pessoas escolherem a mesma lotação, é criado um grupo com nome inicial da área (por exemplo, 2/4); qualquer membro pode personalizar o nome e abrir o perfil completo dos membros e de quem pede entrada. Ao iniciar o grupo, a conversa individual deixa de aparecer e a conversa passa a ser a do grupo; o histórico anterior é copiado e fica disponível também para quem entrar mais tarde. O total do intervalo de renda dos membros aparece na descoberta de grupos e no painel do grupo; nos perfis individuais e nos matches é mostrado o intervalo total do par. As pessoas que partilham um grupo deixam de aparecer na descoberta de pessoas umas para as outras enquanto forem membros. Qualquer membro pode **Sair do grupo**; depois de sair, volta a poder descobrir os restantes membros e deixa de ter acesso à conversa. Se todos saírem, o grupo é encerrado automaticamente. Outros perfis podem pedir entrada se tiverem o mesmo escalão de renda e todos os membros atuais têm de aprovar. O grupo permanece visível enquanto houver lugares, até todos confirmarem **Concluído**; cada pessoa pode participar em vários grupos. Ao cancelar o match que originou o grupo, este e o histórico de grupo permanecem; as mensagens da conversa individual deixam de ser acessíveis. Os gostos recíprocos são removidos e o par pode voltar a aparecer na descoberta se continuar elegível. Pode bloquear ou denunciar um perfil diretamente na descoberta ou numa conversa; os bloqueios podem ser revistos e removidos em **Perfil**. Os pedidos de API estão documentados em `services/api/src/CasaComigo.Api/Auth.http`.
+
+Ao escolher o GPS ou um ponto no mapa, **Área aproximada** é preenchida localmente com o distrito ou a ilha correspondente, a partir dos limites da [CAOP2025 da Direção-Geral do Território](https://www.dgterritorio.gov.pt/atividades/cartografia/cartografia-tematica/caop). Pode corrigir o texto manualmente. As coordenadas não são enviadas a um serviço de geocodificação; se a localização ficar fora das áreas administrativas de Portugal ou os dados locais não estiverem disponíveis, a app pede que indique a área manualmente.
+
+Na descoberta, interesses e preferências iguais são agrupados em **Em comum**; diferenças ficam em **A conversar / reconsiderar**. **Não tenho interesse** oculta o perfil durante três dias e, depois, ele pode voltar a aparecer se a área continuar compatível.
 
 ## Preparar um projeto Supabase para produção
 
 1. No dashboard Supabase, crie um **projeto** dentro da organização. A organização sozinha não tem URL, API keys nem uma base de dados de projeto.
 2. Para a interface publicada, configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` com a URL e a chave **publishable/anon** desse projeto. O ficheiro `.env.production.example` mostra os nomes; configure os valores no serviço de hosting (por exemplo, Vercel), não os adicione ao Git.
 3. Para uma API ASP.NET publicada, configure `SUPABASE_URL` e a connection string PostgreSQL do projeto apenas no ambiente **server-side** da API. O exemplo está em `.env.api.production.example`. A connection string inclui uma password privada. A API precisa de um host próprio compatível com ASP.NET Core; a chave de frontend não substitui esse host.
-4. A chave Supabase `secret`/`service_role` não é uma “private key” para colocar no frontend. Nunca use essa chave como `SUPABASE_JWT_SECRET`: são credenciais diferentes. A API ainda requer uma revisão da validação de JWT/RLS para o projeto cloud antes de expor endpoints de dados.
+4. A chave Supabase `secret`/`service_role` não é uma “private key” para colocar no frontend e não é necessária para validar tokens. Nunca a use como segredo de assinatura JWT. A API consulta as chaves públicas JWKS do projeto; a autorização e RLS para operações de dados ainda devem ser revistas antes de expor endpoints em produção.
 5. Publique migrations apenas depois de rever o destino e os efeitos. `npx supabase db reset` é para desenvolvimento local; não o execute contra uma base com dados que pretende preservar. Não execute `db push` até confirmar que o projeto remoto está selecionado e que as migrations estão prontas.
 
 Não é necessário criar ou ligar o projeto cloud para testar localmente. A instância Docker tem base de dados, URL e credenciais próprias, independentes do projeto alojado.
@@ -88,7 +167,7 @@ Para parar a stack local: `npx supabase stop`.
 ## Estrutura
 
 - `services/web` — React, TypeScript, Vite, Fluent UI v9 e cliente Supabase Auth.
-- `services/api` — ASP.NET Core Web API .NET 10, validação JWT Supabase, EF Core/Npgsql e SignalR configurado.
+- `services/api` — ASP.NET Core Web API .NET 10, validação JWT Supabase e acesso PostgreSQL com Npgsql.
 - `services/api/src/CasaComigo.Api/Auth.http` — pedido para confirmar a sessão da API com token local.
 - `supabase/migrations` — schema inicial seed-free, constraints, índices e RLS.
 - `.env.example` / `.env.api.example` — configuração de desenvolvimento local.
@@ -96,6 +175,6 @@ Para parar a stack local: `npx supabase stop`.
 
 ## Estado real deste scaffold
 
-O health check e `GET /api/auth/session` estão funcionais. Registo e login usam Supabase Auth, e a API confirma o token de acesso antes de a interface mostrar a sessão como validada. A migration cria automaticamente o perfil e o nome inicial durante o registo. As restantes rotas REST estão declaradas e protegidas por autenticação, mas respondem `501 Not Implemented` até os casos de uso/repositórios serem implementados. A migration inclui o schema, RLS, buckets privados e funções SQL para compatibilidade mútua por distância e criação transacional/idempotente de match após likes recíprocos; essas funções ainda não estão ligadas à API nem foram exercitadas contra uma instância PostgreSQL neste ambiente. As políticas precisam de testes de isolamento com utilizadores distintos e revisão de segurança antes de uso real.
+O health check, autenticação, leitura/edição do perfil, atualização da zona privada, descoberta por compatibilidade geográfica mútua, gosto, listagem de matches, grupos de coabitação com nome editável, saída voluntária, soma de contribuições máximas, pedidos de entrada por unanimidade, conclusão consensual, perfis completos para membros/candidatos, histórico e mensagens de grupo, bloqueio e denúncia estão ligados ao frontend. O match é criado numa função SQL transacional só quando o gosto é recíproco; conversas exigem um match existente e não bloqueado. Os grupos são abertos por matches com lotação igual, não restringem a quantidade de grupos de cada utilizador e ficam descobríveis apenas quando têm lugares e compatibilidade geográfica mútua com todos os membros. Pessoas que partilham um grupo não se veem na descoberta individual enquanto continuarem membros; a verificação é aplicada também no registo do gosto. Quando existe grupo, a conversa individual associada é ocultada e só a conversa do grupo é usada; o histórico anterior é preservado para os membros atuais e futuros. A saída remove apenas o membro atual, preserva o grupo e as mensagens para os restantes e encerra o grupo se ficar vazio. Os bloqueios removem a descoberta e o acesso a conversas, e podem ser desfeitos no perfil. Denúncias têm cooldown de dez minutos por par de contas; são armazenadas de forma privada, mas ainda não existe painel nem fluxo de moderação. A política RLS restringe a leitura de grupos e membros a participantes ou a candidatos compatíveis. A interface atualiza as conversas abertas a cada cinco segundos e apresenta até às 100 mensagens mais recentes. Visitas, anúncios e favoritos ainda não estão ligados; as respetivas rotas por implementar respondem `501 Not Implemented`. A aplicação ainda precisa de testes de segurança com utilizadores distintos antes de ser usada com dados reais.
 
-O campo `search_areas` guarda coordenadas precisas numa tabela privada por RLS; não há ainda endpoint de descoberta nem integração da API com o contexto RLS. A distância usa haversine em SQL, sem dependência de PostGIS. Não há seed data, conta demo, Idealista, provisioning cloud ou deploy.
+O campo `search_areas` guarda coordenadas precisas; a API de descoberta não as devolve. A distância usa haversine em SQL, sem dependência de PostGIS. Não há seed data, conta demo, Idealista, provisioning cloud ou deploy.

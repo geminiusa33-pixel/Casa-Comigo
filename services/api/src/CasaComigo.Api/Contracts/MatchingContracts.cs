@@ -1,0 +1,33 @@
+namespace CasaComigo.Api.Contracts;
+
+/// <summary>Resultado de um gosto enviado a outro perfil.</summary>
+public sealed record LikeResponse(bool Liked, bool IsMatch, Guid? MatchId);
+
+/// <summary>Match recíproco com a apresentação não precisa da outra pessoa.</summary>
+public sealed record MatchResponse(
+    Guid Id,
+    Guid ProfileId,
+    string DisplayName,
+    string Bio,
+    int? PreferredHousemates,
+    string GenderPreference,
+    bool HasPets,
+    string[] Interests,
+    string Opinions,
+    string WorkSchedule,
+    string CookingHabits,
+    string AreaLabel,
+    DateTimeOffset MatchedAt,
+    string RentContributionRange,
+    decimal TotalMonthlyRentMinimum,
+    decimal TotalMonthlyRentMaximum,
+    string LeaseHolderPreference,
+    string BillsPreference,
+    string FurnishedPreference,
+    int? PreferredBathrooms,
+    int? PreferredBedrooms,
+    string HomeTypePreference,
+    string MoveInTiming,
+    int? MinimumLeaseMonths,
+    string? PhotoPath,
+    string Porta65Status);
