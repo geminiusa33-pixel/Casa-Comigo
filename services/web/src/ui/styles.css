@@ -777,6 +777,8 @@ button, input { font: inherit; }
 .auth-card .fui-Card {
   display: grid;
   width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   padding: 32px;
   border: 1px solid rgba(32, 55, 45, .08);
@@ -785,6 +787,15 @@ button, input { font: inherit; }
   box-shadow: 0 18px 55px rgba(32, 55, 45, .08);
 }
 
+.auth-card .fui-Card > *,
+.auth-card .auth-feedback,
+.auth-card .auth-feedback-body {
+  min-width: 0;
+}
+.auth-card .fui-Card > p,
+.auth-card .auth-feedback-body {
+  overflow-wrap: anywhere;
+}
 .auth-card .auth-back { justify-self: start; margin: -8px 0 8px -8px; color: #5d6d5f; }
 .auth-card .auth-back:hover { color: #315d48; }
 .auth-card .auth-primary { width: 100%; margin-top: 4px; }
@@ -908,6 +919,12 @@ button, input { font: inherit; }
   .auth-story-footer { display: none; }
   .auth-form-area { padding: 28px 20px 38px; }
   .auth-card .fui-Card { padding: 26px 22px; }
+}
+
+@media (max-width: 380px) {
+  .landing-brand { gap: 6px; font-size: 12px; letter-spacing: -.4px; white-space: nowrap; }
+  .landing-brand-mark { width: 30px; height: 30px; }
+  .landing-header-actions .fui-Button { padding-inline: 6px; font-size: 11px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

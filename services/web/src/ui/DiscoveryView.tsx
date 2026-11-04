@@ -182,7 +182,7 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
         <div>
           <div className="discovery-kicker"><Sparkle24Regular /> Afinidade começa pela convivência</div>
           <h2 id="discovery-section-title">Pessoas compatíveis</h2>
-          <p>Conheça quem procura casa na sua zona e partilha um ritmo de vida parecido.</p>
+          <p>Conhece quem procura casa na tua zona e partilha um ritmo de vida parecido.</p>
         </div>
         <div className="discovery-toolbar-actions">
           <Button
@@ -288,10 +288,10 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
               <span className="discovery-empty-home"><PeopleCommunity24Regular /></span>
             </div>
             <div className="discovery-empty-copy">
-              <Badge appearance="tint" color="success">A sua procura começa aqui</Badge>
+              <Badge appearance="tint" color="success">A tua procura começa aqui</Badge>
               <h3>Ainda não há perfis para mostrar</h3>
               <p>
-                Complete o perfil, escolha uma zona de procura e ative a descoberta.
+                Completa o perfil, escolhe uma zona de procura e ativa a descoberta.
                 Mostraremos pessoas quando as áreas forem mutuamente compatíveis.
               </p>
               <Button appearance="primary" onClick={onEditProfile}>Rever o meu perfil</Button>
@@ -299,7 +299,7 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
           </Card>
           <div className="discovery-empty-footnote">
             <Location24Regular />
-            <span>Está tudo bem ir ao seu ritmo. Novos perfis compatíveis aparecerão aqui.</span>
+            <span>Está tudo bem ires ao teu ritmo. Novos perfis compatíveis aparecerão aqui.</span>
           </div>
         </div>
       )}
@@ -370,7 +370,7 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
                     >
                       Não tenho interesse
                     </Button>
-                    <span>Se não escolher, este perfil pode voltar a aparecer.</span>
+                    <span>Se não escolheres, este perfil pode voltar a aparecer.</span>
                   </div>
                   <div className="discovery-profile-safety">
                     <ProfileSafetyActions

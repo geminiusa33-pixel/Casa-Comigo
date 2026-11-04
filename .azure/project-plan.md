@@ -4,7 +4,7 @@
 
 ## 1. Project Overview
 
-Casa Comigo is a responsive, Portuguese-language roommate-matching platform. It helps people find compatible housemates through profile preferences and mutually compatible search areas, then supports reciprocal likes, matches, private chat, and user-initiated visits or WhatsApp contact. The MVP also includes a distinct area for user-created house listings and favorites.
+Divide Casa Comigo is a responsive, Portuguese-language roommate-matching platform. It helps people find compatible housemates through profile preferences and mutually compatible search areas, then supports reciprocal likes, matches, private chat, and user-initiated visits or WhatsApp contact. The MVP also includes a distinct area for user-created house listings and favorites.
 
 The project is local-first and cost-conscious: develop and test the application locally with Supabase from the beginning. Do not provision Azure resources for the MVP.
 

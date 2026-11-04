@@ -58,7 +58,7 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
         <section className="auth-story">
           <a className="landing-brand" href="#" onClick={(event) => { event.preventDefault(); onBack(); }}>
             <span className="landing-brand-mark"><Home24Regular /></span>
-            <span>casa comigo<span className="landing-brand-period">.</span></span>
+            <span>Divide Casa Comigo<span className="landing-brand-period">.</span></span>
           </a>
           <div className="auth-story-copy">
             <span className="landing-eyebrow">Um bom lugar começa com as pessoas</span>
@@ -74,7 +74,7 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
               </Button>
               <Text weight="semibold">Ligue-se ao Supabase local</Text>
               <p className={styles.note}>
-                Configure o URL e a chave pública em services/web/.env.local e reinicie o frontend.
+                Configura o URL e a chave pública em services/web/.env.local e reinicia o frontend.
               </p>
             </Card>
           </div>
@@ -108,10 +108,7 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
         if (resetError) {
           setError(authErrorMessage(resetError.message));
         } else {
-          const localInbucketHint = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-            ? " Em desenvolvimento local, consulta também o Inbucket em http://localhost:54324."
-            : "";
-          setNotice(`Se existir uma conta associada a este email, receberás uma mensagem com instruções para redefinir a palavra-passe. Consulta a caixa de entrada e o spam.${localInbucketHint}`);
+          setNotice("Pedido aceite. Por segurança, o Supabase não confirma se o email corresponde a uma conta. Se a conta existir, receberás instruções por email. Consulta também o spam.");
         }
         return;
       }
@@ -129,7 +126,7 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
       } else if (result.data.session) {
         onAuthenticated(result.data.session);
       } else if (mode === "sign-up") {
-        setNotice("Conta criada. Confirme o email para entrar; em local, veja a mensagem no Inbucket.");
+        setNotice("Conta criada. Confirma o email para entrares e consulta também o spam.");
       } else {
         setError("A autenticação terminou sem uma sessão. Tente novamente.");
       }
@@ -148,7 +145,7 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
       <section className="auth-story">
         <a className="landing-brand" href="#" onClick={(event) => { event.preventDefault(); onBack(); }}>
           <span className="landing-brand-mark"><Home24Regular /></span>
-          <span>casa comigo<span className="landing-brand-period">.</span></span>
+          <span>Divide Casa Comigo<span className="landing-brand-period">.</span></span>
         </a>
         <div className="auth-story-copy">
           <span className="landing-eyebrow">Um bom lugar começa com as pessoas</span>
@@ -172,11 +169,15 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
                 ? "Regista-te para começares a preparar o teu perfil de partilha."
                 : isForgotPassword
                   ? "Indica o email da tua conta e enviaremos instruções para escolheres uma nova palavra-passe."
-                  : "Entra para continuares a preparar a tua experiência Casa Comigo."}
+                  : "Entra para continuares a preparar a tua experiência no Divide Casa Comigo."}
             </p>
 
             {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
-            {notice && <MessageBar intent="success"><MessageBarBody>{notice}</MessageBarBody></MessageBar>}
+            {notice && (
+              <MessageBar className="auth-feedback" intent="success">
+                <MessageBarBody className="auth-feedback-body">{notice}</MessageBarBody>
+              </MessageBar>
+            )}
 
             <form className={styles.form} onSubmit={handleSubmit}>
               {isSignUp && (
@@ -260,7 +261,7 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
               )}
             </div>
             <p className={styles.note}>
-              A autenticação usa o Supabase. A tua palavra-passe não é enviada nem guardada pela API Casa Comigo.
+              A autenticação usa o Supabase. A tua palavra-passe não é enviada nem guardada pela API do Divide Casa Comigo.
             </p>
           </Card>
         </div>

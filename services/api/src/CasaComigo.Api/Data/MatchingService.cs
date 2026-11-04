@@ -15,9 +15,9 @@ public sealed class MatchingService(
     {
         var profile = await profileService.GetAsync(profileId, cancellationToken);
         if (profile is null)
-            throw new ProfileValidationException("Complete o seu perfil antes de descobrir pessoas.");
+            throw new ProfileValidationException("Completa o teu perfil antes de descobrir pessoas.");
         if (!profile.ProfileComplete || !profile.DiscoveryVisible)
-            throw new ProfileValidationException("Complete o perfil, guarde a zona e ative a descoberta nas definições.");
+            throw new ProfileValidationException("Completa o teu perfil, guarda a zona e ativa a descoberta nas definições.");
 
         return await repository.GetDiscoverableAsync(profileId, cancellationToken);
     }
@@ -29,9 +29,9 @@ public sealed class MatchingService(
     {
         var profile = await profileService.GetAsync(profileId, cancellationToken);
         if (profile is null)
-            throw new ProfileValidationException("Complete o seu perfil antes de descobrir pessoas.");
+            throw new ProfileValidationException("Completa o teu perfil antes de descobrir pessoas.");
         if (!profile.ProfileComplete || !profile.DiscoveryVisible)
-            throw new ProfileValidationException("Complete o perfil, guarde a zona e ative a descoberta nas definições.");
+            throw new ProfileValidationException("Completa o teu perfil, guarda a zona e ativa a descoberta nas definições.");
 
         return await repository.GetReconsiderableAsync(profileId, cancellationToken);
     }
@@ -43,7 +43,7 @@ public sealed class MatchingService(
         CancellationToken cancellationToken)
     {
         if (profileId == recipientId)
-            throw new ProfileValidationException("Não pode gostar do seu próprio perfil.");
+            throw new ProfileValidationException("Não podes gostar do teu próprio perfil.");
 
         return await repository.LikeAsync(profileId, recipientId, cancellationToken);
     }
@@ -55,7 +55,7 @@ public sealed class MatchingService(
         CancellationToken cancellationToken)
     {
         if (profileId == recipientId)
-            throw new ProfileValidationException("Não pode rejeitar o seu próprio perfil.");
+            throw new ProfileValidationException("Não podes rejeitar o teu próprio perfil.");
 
         return await repository.PassAsync(profileId, recipientId, cancellationToken);
     }

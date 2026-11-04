@@ -2,7 +2,7 @@ export function authErrorMessage(message: string): string {
   const normalized = message.toLowerCase();
 
   if (normalized.includes("already registered") || normalized.includes("already been registered")) {
-    return "Já existe uma conta com este email. Experimente iniciar sessão.";
+    return "Já existe uma conta com este email. Experimenta iniciar sessão.";
   }
 
   if (normalized.includes("invalid login credentials")) {
@@ -10,11 +10,11 @@ export function authErrorMessage(message: string): string {
   }
 
   if (normalized.includes("email not confirmed")) {
-    return "Confirme o email antes de iniciar sessão. Em local, consulte o Inbucket.";
+    return "Confirma o email antes de iniciar sessão. Consulta a caixa de entrada e o spam.";
   }
 
   if (normalized.includes("password")) {
-    return "A palavra-passe não cumpre os requisitos. Use pelo menos 8 caracteres.";
+    return "A palavra-passe não cumpre os requisitos. Usa pelo menos 8 caracteres.";
   }
 
   return `Não foi possível concluir a operação de autenticação: ${message}`;

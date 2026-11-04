@@ -217,7 +217,13 @@ export function App() {
   async function signOut() {
     if (!supabase) return;
     const { error } = await supabase.auth.signOut();
-    if (error) setApiError(`Não foi possível terminar a sessão: ${error.message}`);
+    if (error) {
+      setApiError(`Não foi possível terminar a sessão: ${error.message}`);
+      return;
+    }
+    setShowStoryBanner(false);
+    setAuthMode("landing");
+    setSelected("inicio");
   }
 
   if (authLoading) {
@@ -237,7 +243,16 @@ export function App() {
 
   if (!session) {
     if (authMode === "landing") {
-      return <LandingPage onSignIn={() => setAuthMode("sign-in")} onSignUp={() => setAuthMode("sign-up")} />;
+      return (
+        <LandingPage
+          onSignIn={() => setAuthMode("sign-in")}
+          onSignUp={() => setAuthMode("sign-up")}
+          showStoryBanner={showStoryBanner}
+          onDismissStoryBanner={() => setShowStoryBanner(false)}
+          showSupportBanner={showSupportBanner}
+          onDismissSupportBanner={() => setShowSupportBanner(false)}
+        />
+      );
     }
 
     return (
@@ -272,14 +287,14 @@ export function App() {
         <Button
           appearance="subtle"
           className={`${styles.brand} member-home-link`}
-          aria-label="Casa Comigo: abrir página principal"
+          aria-label="Divide Casa Comigo: abrir página principal"
           onClick={() => {
             setSelected("inicio");
             setProfileSavedNotice(false);
           }}
         >
           <div className={styles.brandMark}><Home24Regular /></div>
-          <Text className={styles.brandName} size={500}>casa comigo</Text>
+          <Text className={styles.brandName} size={400}>Divide Casa Comigo</Text>
         </Button>
         <div className={styles.topActions}>
           <Badge className="member-environment" appearance="tint" color="success">Ambiente local</Badge>
@@ -305,9 +320,9 @@ export function App() {
           <section className={`${styles.heading} member-heading`}>
             <Text className={styles.eyebrow}>Um bom começo para partilhar casa</Text>
             <h1 className={styles.title}>
-              {currentLabel}<span className="member-heading-comma">,</span> <em>ao seu ritmo.</em>
+              {currentLabel}<span className="member-heading-comma">,</span> <em>ao teu ritmo.</em>
             </h1>
-            <p className={styles.subtitle}>Pessoas, espaços e rotinas que podem combinar com a sua próxima casa.</p>
+            <p className={styles.subtitle}>Pessoas, espaços e rotinas que podem combinar com a tua próxima casa.</p>
           </section>
 
           <div className="member-tabs-wrap">
@@ -340,19 +355,19 @@ export function App() {
 
           {profileSavedNotice && selected === "descobrir" && (
             <MessageBar intent="success" className="profile-saved-notice">
-              <MessageBarBody>Perfil guardado. Já pode continuar a descobrir pessoas na sua zona.</MessageBarBody>
+              <MessageBarBody>Perfil guardado. Já podes continuar a descobrir pessoas na tua zona.</MessageBarBody>
             </MessageBar>
           )}
 
           <Card className={`${styles.sideCard} member-start-card`}>
             <div>
-              <h2 className={styles.sideTitle}>Comece por aqui</h2>
-              <p className={styles.sideText}>Pode atualizar as suas escolhas quando quiser. A localização precisa fica privada.</p>
+              <h2 className={styles.sideTitle}>Começa por aqui</h2>
+              <p className={styles.sideText}>Podes atualizar as tuas escolhas quando quiseres. A localização precisa fica privada.</p>
             </div>
-            <div className={styles.step}><span className={styles.stepDot}>1</span><Text size={300}>Conte-nos um pouco sobre si</Text></div>
-            <div className={styles.step}><span className={styles.stepDot}>2</span><Text size={300}>Escolha a zona e o raio de procura</Text></div>
-            <div className={styles.step}><span className={styles.stepDot}>3</span><Text size={300}>Descubra pessoas e casas</Text></div>
-            <Button appearance="secondary" onClick={() => setSelected("perfil")}>Completar perfil</Button>
+            <div className={styles.step}><span className={styles.stepDot}>1</span><Text size={300}>Conta-nos um pouco sobre ti</Text></div>
+            <div className={styles.step}><span className={styles.stepDot}>2</span><Text size={300}>Escolhe a zona e o raio de procura</Text></div>
+            <div className={styles.step}><span className={styles.stepDot}>3</span><Text size={300}>Descobre pessoas e casas</Text></div>
+            <Button appearance="secondary" onClick={() => setSelected("perfil")}>Completa o perfil</Button>
           </Card>
 
           {selected === "descobrir" && (
@@ -388,16 +403,16 @@ export function App() {
           {(selected === "casas" || selected === "favoritos") && (
             <Card className={styles.profileCard}>
               <Text weight="semibold">Esta área será ligada numa próxima etapa.</Text>
-              <p>Por agora, pode completar o perfil e conhecer pessoas em zonas compatíveis.</p>
-              <Button appearance="primary" onClick={() => setSelected("perfil")}>Completar perfil</Button>
+              <p>Por agora, podes completar o perfil e conhecer pessoas em zonas compatíveis.</p>
+              <Button appearance="primary" onClick={() => setSelected("perfil")}>Completa o perfil</Button>
             </Card>
           )}
         </main>
 
         <aside className="member-sidebar">
           <Card className={styles.sideCard}>
-            <h2 className={styles.sideTitle}><Location24Regular /> A sua privacidade primeiro</h2>
-            <p className={styles.sideText}>A localização só deve ser pedida quando escolher configurar a sua área. Pode usar uma referência manual em vez de GPS.</p>
+            <h2 className={styles.sideTitle}><Location24Regular /> A tua privacidade primeiro</h2>
+            <p className={styles.sideText}>A localização só é pedida quando escolhes configurar a tua área. Podes usar uma referência manual em vez de GPS.</p>
           </Card>
           <MessageBar className={styles.status} intent={apiError ? "error" : apiIdentity ? "success" : "warning"}>
             <MessageBarBody>
@@ -407,7 +422,7 @@ export function App() {
                   ? "Sessão Supabase ativa e validada pela API local."
                   : hasSupabasePublicConfig
                     ? "A validar a sessão na API local…"
-                    : "Configure services/web/.env.local para ligar ao Supabase local."}
+                    : "Configura services/web/.env.local para ligar ao Supabase local."}
             </MessageBarBody>
           </MessageBar>
           <p className={styles.footer}>A localização exata nunca é apresentada a outros utilizadores.</p>

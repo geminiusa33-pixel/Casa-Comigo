@@ -50,7 +50,7 @@ export function PasswordRecoveryPanel({ onCompleted }: Props) {
   return (
     <div className="password-recovery-page">
       <Card className="password-recovery-card">
-        <span className="landing-eyebrow">Casa Comigo</span>
+        <span className="landing-eyebrow">Divide Casa Comigo</span>
         <h1>{updated ? "Palavra-passe atualizada" : "Escolhe uma nova palavra-passe"}</h1>
         <p>
           {updated

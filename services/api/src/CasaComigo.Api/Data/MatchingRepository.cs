@@ -180,7 +180,7 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
         catch (PostgresException exception) when (exception.SqlState == "42501")
         {
             await transaction.RollbackAsync(cancellationToken);
-            throw new ProfileValidationException("Este perfil já não está disponível na sua zona de procura.");
+            throw new ProfileValidationException("Este perfil já não está disponível na tua zona de procura.");
         }
     }
 

@@ -199,7 +199,7 @@ export function NotificationsBell({ session, onUnreadCountChange, onOpenNotifica
                     </button>
                   ))}
                 </div>
-              : <p className="notifications-empty">Ainda não tem notificações.</p>}
+              : <p className="notifications-empty">Ainda não tens notificações.</p>}
           {pushSupported && (
             <footer>
               <Button appearance="secondary" size="small" disabled={working} onClick={() => void togglePush()}>

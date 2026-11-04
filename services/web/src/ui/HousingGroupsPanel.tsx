@@ -206,7 +206,7 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
       setGroups(remainingGroups);
       setSelectedGroupId((current) => current === group.id ? remainingGroups[0]?.id ?? "" : current);
       setConfirmLeaveGroupId("");
-      setNotice(`Saiu do grupo ${group.name}. Os membros deixam de aparecer na sua descoberta de pessoas, salvo se ainda partilharem outro grupo.`);
+      setNotice(`Saíste do grupo ${group.name}. Os membros deixam de aparecer na tua descoberta de pessoas, salvo se ainda partilharem outro grupo.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível sair do grupo.");
     } finally {
@@ -276,7 +276,7 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
       {notice && <MessageBar intent="success"><MessageBarBody>{notice}</MessageBarBody></MessageBar>}
       {groups.length === 0 && (
         <Card style={{ padding: 20 }}>
-          <Text>Ainda não tem grupos ativos. Um grupo concluído ou encerrado deixa de aparecer aqui.</Text>
+          <Text>Ainda não tens grupos ativos. Um grupo concluído ou encerrado deixa de aparecer aqui.</Text>
         </Card>
       )}
       {groups.length > 0 && (
@@ -364,7 +364,7 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
                   )}
                   {confirmLeaveGroupId === group.id ? (
                     <div className="group-leave-confirm" role="group" aria-label={`Confirmar saída de ${group.name}`}>
-                      <Text size={200}>Vai deixar de fazer parte do grupo e da conversa. Poderá voltar a descobrir os restantes membros.</Text>
+                      <Text size={200}>Vais deixar de fazer parte do grupo e da conversa. Podes voltar a descobrir os restantes membros.</Text>
                       <div>
                         <Button
                           appearance="primary"

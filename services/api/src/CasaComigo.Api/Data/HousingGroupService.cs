@@ -18,7 +18,7 @@ public sealed class HousingGroupService(IHousingGroupRepository repository) : IH
     {
         var name = request.Name.Trim();
         if (name.Length == 0 || name.Length > 80)
-            throw new ProfileValidationException("O nome do grupo deve ter entre 1 e 80 caracteres.");
+            throw new ProfileValidationException("O nome do grupo tem de ter entre 1 e 80 caracteres.");
         if (!await repository.RenameAsync(profileId, groupId, name, cancellationToken))
             throw new ChatNotFoundException();
     }
@@ -70,7 +70,7 @@ public sealed class HousingGroupService(IHousingGroupRepository repository) : IH
     {
         var body = request.Body.Trim();
         if (body.Length == 0 || body.Length > 4000)
-            throw new ProfileValidationException("A mensagem deve ter entre 1 e 4000 caracteres.");
+            throw new ProfileValidationException("A mensagem tem de ter entre 1 e 4000 caracteres.");
 
         return repository.SendMessageAsync(profileId, groupId, body, cancellationToken);
     }

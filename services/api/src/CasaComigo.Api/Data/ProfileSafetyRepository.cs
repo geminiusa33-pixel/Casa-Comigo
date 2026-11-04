@@ -121,7 +121,7 @@ public sealed class ProfileSafetyRepository(NpgsqlDataSource dataSource) : IProf
             cooldownCommand.Parameters.AddWithValue(reportedId);
             if (await cooldownCommand.ExecuteScalarAsync(cancellationToken) is true)
                 throw new ProfileSafetyConflictException(
-                    "Já enviou uma denúncia sobre este perfil. Aguarde dez minutos antes de enviar outra.");
+                    "Já enviaste uma denúncia sobre este perfil. Aguarda dez minutos antes de enviares outra.");
         }
 
         await using var insertCommand = connection.CreateCommand();

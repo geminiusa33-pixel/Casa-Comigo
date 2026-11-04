@@ -9,7 +9,7 @@ public sealed class ProfileSafetyService(IProfileSafetyRepository repository) : 
     public Task BlockAsync(Guid blockerId, Guid blockedId, CancellationToken cancellationToken)
     {
         if (blockerId == blockedId)
-            throw new ProfileValidationException("Não pode bloquear o seu próprio perfil.");
+            throw new ProfileValidationException("Não podes bloquear o teu próprio perfil.");
 
         return repository.BlockAsync(blockerId, blockedId, cancellationToken);
     }
@@ -18,7 +18,7 @@ public sealed class ProfileSafetyService(IProfileSafetyRepository repository) : 
     public Task UnblockAsync(Guid blockerId, Guid blockedId, CancellationToken cancellationToken)
     {
         if (blockerId == blockedId)
-            throw new ProfileValidationException("Não pode desbloquear o seu próprio perfil.");
+            throw new ProfileValidationException("Não podes desbloquear o teu próprio perfil.");
 
         return repository.UnblockAsync(blockerId, blockedId, cancellationToken);
     }
@@ -37,7 +37,7 @@ public sealed class ProfileSafetyService(IProfileSafetyRepository repository) : 
         CancellationToken cancellationToken)
     {
         if (reporterId == reportedId)
-            throw new ProfileValidationException("Não pode denunciar o seu próprio perfil.");
+            throw new ProfileValidationException("Não podes denunciar o teu próprio perfil.");
 
         var reason = request.Reason.Trim();
         if (reason.Length < 5)

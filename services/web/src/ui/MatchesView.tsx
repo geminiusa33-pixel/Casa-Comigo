@@ -139,13 +139,13 @@ export function MatchesView({ session, initialMatchId, initialGroupId }: Props) 
     <>
     <section style={{ display: "grid", gap: 16 }}>
       <div>
-        <h2 style={{ marginBottom: 4 }}>Os seus matches</h2>
+        <h2 style={{ marginBottom: 4 }}>Os teus matches</h2>
         <p style={{ marginTop: 0 }}>Um match só é criado depois de ambos gostarem um do outro. As conversas atualizam automaticamente.</p>
       </div>
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {notice && <MessageBar intent="success"><MessageBarBody>{notice}</MessageBarBody></MessageBar>}
       {!error && matches.length === 0 && (
-        <Card style={{ padding: 24 }}><Text>Ainda não tem matches. Continue a conhecer pessoas na descoberta.</Text></Card>
+        <Card style={{ padding: 24 }}><Text>Ainda não tens matches. Continua a conhecer pessoas na descoberta.</Text></Card>
       )}
       {matches.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 16 }}>

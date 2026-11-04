@@ -65,7 +65,7 @@ public static class NotificationEndpoints
                 IResult result = !service.IsPushConfigured || string.IsNullOrWhiteSpace(publicKey)
                     ? TypedResults.Problem(
                         title: "Notificações push não configuradas",
-                        detail: "Configure a chave pública VAPID da API para ativar notificações do browser.",
+                        detail: "Configura a chave pública VAPID da API para ativares notificações do browser.",
                         statusCode: StatusCodes.Status503ServiceUnavailable)
                     : TypedResults.Ok(new PushPublicKeyResponse(publicKey));
                 return Task.FromResult(result);
@@ -86,7 +86,7 @@ public static class NotificationEndpoints
                 if (!service.IsPushConfigured)
                     return TypedResults.Problem(
                         title: "Notificações push não configuradas",
-                        detail: "Configure as chaves VAPID e o assunto da aplicação na API.",
+                        detail: "Configura as chaves VAPID e o assunto da aplicação na API.",
                         statusCode: StatusCodes.Status503ServiceUnavailable);
                 await service.SavePushSubscriptionAsync(profileId, request, cancellationToken);
                 return TypedResults.NoContent();

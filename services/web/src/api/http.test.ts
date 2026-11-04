@@ -17,13 +17,13 @@ describe("apiRequest", () => {
 
   it("surfaces API problem details", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(
-      JSON.stringify({ detail: "Aguarde antes de enviar outra denúncia." }),
+      JSON.stringify({ detail: "Já enviaste uma denúncia sobre este perfil. Aguarda dez minutos antes de enviares outra." }),
       { status: 409, headers: { "Content-Type": "application/problem+json" } },
     )));
 
     await expect(apiRequest("/api/profiles/example/reports", "token", {
       method: "POST",
       body: JSON.stringify({ reason: "Spam" }),
-    })).rejects.toThrow("Aguarde antes de enviar outra denúncia.");
+    })).rejects.toThrow("Já enviaste uma denúncia sobre este perfil. Aguarda dez minutos antes de enviares outra.");
   });
 });

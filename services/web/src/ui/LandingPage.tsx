@@ -51,9 +51,9 @@ export function LandingPage({
   onDiscover,
   onProfile,
   onSignOut,
-  showStoryBanner = true,
+  showStoryBanner,
   onDismissStoryBanner,
-  showSupportBanner = true,
+  showSupportBanner,
   onDismissSupportBanner,
 }: Props) {
   const [localStoryOpen, setLocalStoryOpen] = useState(true);
@@ -145,28 +145,31 @@ export function LandingPage({
               title="Fechar"
               onClick={dismissStory}
             />
-            <span className="landing-eyebrow">Porque nasceu a Casa Comigo</span>
+            <span className="landing-eyebrow">Porque nasceu o projeto Divide Casa Comigo</span>
             <h2 id="landing-story-title">Uma ideia que começou numa experiência pessoal.</h2>
             <p id="landing-story-description">
               Sou pai e mudei-me do Porto para Lisboa para estar perto da minha filha. Gostava de poder
               partilhar com ela uma residência alternada, mas, por enquanto, não consigo suportar sozinho
               o custo de uma casa que permita essa solução. Esta dificuldade limita o tempo que podemos
               passar juntos — uma realidade delicada, vivida por muitas famílias, sem que isso tenha de ser
-              culpa de alguém. Criei esta plataforma na esperança de tornar mais fácil encontrar pessoas
-              compatíveis para partilhar casa e, assim, abrir novas possibilidades para quem precisa de
-              conciliar habitação acessível e vida familiar.
+              culpa de alguém. Neste momento, a possibilidade de residência alternada está em pausa,
+              a aguardar apreciação do tribunal e até conseguir arrendar uma casa que permita essa solução.
+              Criei esta plataforma na esperança de tornar mais fácil encontrar pessoas compatíveis para
+              partilhar casa e, assim, abrir novas possibilidades para quem precisa de conciliar habitação
+              acessível e vida familiar.
             </p>
             <p className="landing-story-signature">
-              A plataforma é gratuita nesta fase. Se quiseres apoiar o projeto, podes pagar um café.
+              A plataforma é gratuita nesta fase. Se quiseres apoiar o projeto,{" "}
+              <a href="#apoio" onClick={dismissStory}>podes pagar um café</a>.
             </p>
           </section>
         </div>,
         document.body,
       )}
       <header className="landing-header">
-        <a className="landing-brand" href="#inicio" aria-label="Casa Comigo, início">
+        <a className="landing-brand" href="#inicio" aria-label="Divide Casa Comigo, início">
           <span className="landing-brand-mark"><Home24Regular /></span>
-          <span>casa comigo<span className="landing-brand-period">.</span></span>
+          <span>Divide Casa Comigo<span className="landing-brand-period">.</span></span>
         </a>
         <nav className="landing-nav" aria-label="Navegação da página">
           <a href="#como-funciona">Como funciona</a>
@@ -208,7 +211,7 @@ export function LandingPage({
                   ? <a className="landing-donation-link" key={amount} href={url} target="_blank" rel="noreferrer">Pagar um café · {amount}</a>
                   : <Button key={amount} appearance="secondary" disabled>Pagar um café · {amount}</Button>)}
                 {!donationLinks.some(({ url }) => url) && (
-                  <p>Os pagamentos ainda não estão configurados. Consulte o README para criar os links seguros no Stripe.</p>
+                  <p>Os pagamentos ainda não estão configurados. Consulta o README para criar os links seguros no Stripe.</p>
                 )}
               </div>
               <Button
@@ -325,7 +328,7 @@ export function LandingPage({
             <article>
               <h3>Contrato e recibos</h3>
               <p>
-                Antes de pagar ou mudar, confirme por escrito quem será parte no contrato, como se divide
+                Antes de pagares ou mudares, confirma por escrito quem será parte no contrato, como se divide
                 a renda, que despesas estão incluídas e como serão emitidos os recibos. A emissão de recibos
                 separados depende da relação contratual e do enquadramento fiscal; não é garantida em todos
                 os modelos de partilha.
@@ -336,8 +339,8 @@ export function LandingPage({
               <h3>Direitos e deveres</h3>
               <p>
                 A lei do arrendamento prevê regras sobre contrato, pagamento, conservação do imóvel,
-                comunicações e cessação. Leia o contrato com atenção, guarde comprovativos e esclareça
-                responsabilidades com o senhorio antes de assinar.
+                comunicações e cessação. Lê o contrato com atenção, guarda comprovativos e esclarece
+                responsabilidades com o senhorio antes de assinares.
               </p>
               <a href="https://www.pgdlisboa.pt/leis/lei_mostra_articulado.php?nid=691&tabela=leis" target="_blank" rel="noreferrer">Novo Regime do Arrendamento Urbano</a>
             </article>
@@ -349,19 +352,19 @@ export function LandingPage({
                 agregado também podem ser relevantes; assinalar
                 interesse no perfil não significa que a candidatura seja elegível ou aprovada.
               </p>
-              <a href="https://www.portaldahabitacao.pt/porta-65-jovem" target="_blank" rel="noreferrer">Consultar condições no Portal da Habitação</a>
+              <a href="https://www.portaldahabitacao.pt/porta-65-jovem" target="_blank" rel="noreferrer">Consulta as condições no Portal da Habitação</a>
             </article>
           </div>
-          <p className="landing-legal-note">Esta informação é geral, pode mudar e não substitui aconselhamento jurídico ou fiscal. Confirme sempre as regras e a sua situação junto das entidades oficiais ou de um profissional qualificado.</p>
+          <p className="landing-legal-note">Esta informação é geral, pode mudar e não substitui aconselhamento jurídico ou fiscal. Confirma sempre as regras e a tua situação junto das entidades oficiais ou de um profissional qualificado.</p>
         </section>
 
         <section className="landing-terms" id="termos">
           <span className="landing-eyebrow">Termos e utilização</span>
           <h2>Regras claras para uma comunidade mais segura.</h2>
           <div className="landing-terms-grid">
-            <article><h3>O que a plataforma faz</h3><p>A Casa Comigo ajuda pessoas a descobrir potenciais colegas de casa e a conversar. Não é agência imobiliária, não anuncia nem inspeciona imóveis, não representa utilizadores e não garante matches, alojamento, segurança ou elegibilidade para apoios.</p></article>
-            <article><h3>Responsabilidade dos utilizadores</h3><p>Use informação verdadeira, respeite os outros e não publique conteúdo ilegal, discriminatório, enganador ou abusivo. Verifique a identidade, o imóvel e as condições por meios próprios; não envie dinheiro antes de confirmar a legitimidade do anúncio e do destinatário.</p></article>
-            <article><h3>Dados, cookies e privacidade</h3><p>Não usamos cookies de terceiros para publicidade, análise ou rastreamento. A sessão de autenticação é guardada no armazenamento local do browser. A localização exata não é apresentada no perfil público, mas a plataforma usa dados fornecidos para calcular compatibilidade. O mapa usa OpenStreetMap e recebe os pedidos do browser. Há medidas de segurança e controlo de acesso, mas não é correto prometer privacidade ou segurança absolutas. Partilhe apenas o necessário e não inclua dados bancários, documentos de identificação ou moradas privadas em perfis e conversas.</p></article>
+            <article><h3>O que a plataforma faz</h3><p>O Divide Casa Comigo ajuda pessoas a descobrir potenciais colegas de casa e a conversar. Não é uma agência imobiliária, não anuncia nem inspeciona imóveis, não te representa e não garante matches, alojamento, segurança ou elegibilidade para apoios.</p></article>
+            <article><h3>Responsabilidade dos utilizadores</h3><p>Usa informação verdadeira, respeita as outras pessoas e não publiques conteúdo ilegal, discriminatório, enganador ou abusivo. Verifica a identidade, o imóvel e as condições por meios próprios; não envies dinheiro antes de confirmares a legitimidade do anúncio e do destinatário.</p></article>
+            <article><h3>Dados, cookies e privacidade</h3><p>Não usamos cookies de terceiros para publicidade, análise ou rastreamento. A sessão de autenticação fica guardada no armazenamento local do browser. A localização exata não aparece no perfil público, mas usamos os dados que forneces para calcular compatibilidade. O mapa usa OpenStreetMap e recebe os pedidos do teu browser. Há medidas de segurança e controlo de acesso, mas não é correto prometer privacidade ou segurança absolutas. Partilha apenas o necessário e não incluas dados bancários, documentos de identificação ou moradas privadas nos perfis e conversas.</p></article>
           </div>
           <p className="landing-legal-note">Este resumo é informativo, não é aconselhamento jurídico e ainda deve ser revisto e completado para refletir o responsável pelo tratamento, retenção de dados, exercício de direitos e regras de reclamação aplicáveis ao serviço.</p>
         </section>
@@ -394,15 +397,15 @@ export function LandingPage({
       <footer className="landing-footer">
         <a className="landing-brand" href="#inicio">
           <span className="landing-brand-mark"><Home24Regular /></span>
-          <span>casa comigo<span className="landing-brand-period">.</span></span>
+          <span>Divide Casa Comigo<span className="landing-brand-period">.</span></span>
         </a>
-        <span>Encontrar pessoas. Sentir-se em casa.</span>
+        <span>Encontra pessoas. Sente-te em casa.</span>
         <nav aria-label="Informação legal e contacto">
           <a href="#termos">Termos</a>
           <a href="#arrendamento">Informação de arrendamento</a>
           <a href="#contactos">Contactos</a>
         </nav>
-        <span>© Casa Comigo</span>
+        <span>© Divide Casa Comigo</span>
       </footer>
     </div>
   );

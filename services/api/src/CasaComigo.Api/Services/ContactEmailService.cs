@@ -9,6 +9,7 @@ namespace CasaComigo.Api.Services;
 public interface IContactEmailService
 {
     bool IsConfigured { get; }
+    IReadOnlyList<string> MissingSettings { get; }
 
     Task SendAsync(ContactMessageRequest request, CancellationToken cancellationToken);
 }
@@ -22,13 +23,27 @@ public sealed class SendGridContactEmailService(
     private readonly string? apiKey = configuration["SendGrid:ApiKey"];
     private readonly string? fromEmail = configuration["SendGrid:FromEmail"];
     private readonly string? toEmail = configuration["Contact:ToEmail"];
-    private readonly string fromName = configuration["SendGrid:FromName"] ?? "Casa Comigo";
+    private readonly string fromName = configuration["SendGrid:FromName"] ?? "Divide Casa Comigo";
 
     /// <inheritdoc />
     public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(apiKey)
-        && !string.IsNullOrWhiteSpace(fromEmail)
-        && !string.IsNullOrWhiteSpace(toEmail);
+        MissingSettings.Count == 0;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> MissingSettings
+    {
+        get
+        {
+            var missing = new List<string>(3);
+            if (string.IsNullOrWhiteSpace(apiKey))
+                missing.Add("SendGrid__ApiKey");
+            if (string.IsNullOrWhiteSpace(fromEmail))
+                missing.Add("SendGrid__FromEmail");
+            if (string.IsNullOrWhiteSpace(toEmail))
+                missing.Add("Contact__ToEmail");
+            return missing;
+        }
+    }
 
     /// <inheritdoc />
     public async Task SendAsync(ContactMessageRequest request, CancellationToken cancellationToken)
@@ -42,7 +57,7 @@ public sealed class SendGridContactEmailService(
             personalizations = new[] { new { to = new[] { new { email = toEmail } } } },
             from = new { email = fromEmail, name = fromName },
             reply_to = new { email = request.Email.Trim(), name = senderName },
-            subject = $"Contacto Casa Comigo: mensagem de {senderName}",
+            subject = $"Contacto Divide Casa Comigo: mensagem de {senderName}",
             content = new[]
             {
                 new

@@ -71,7 +71,7 @@ export function SearchAreaMap({ position, radiusKm, onSelect }: Props) {
           </>
         )}
       </MapContainer>
-      {!position && <div className="search-area-map-prompt">Clique no mapa para escolher a zona</div>}
+      {!position && <div className="search-area-map-prompt">Clica no mapa para escolheres a zona</div>}
     </div>
   );
 }

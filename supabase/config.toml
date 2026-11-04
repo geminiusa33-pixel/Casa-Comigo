@@ -22,6 +22,14 @@ site_url = "http://localhost:5173"
 additional_redirect_urls = ["http://127.0.0.1:5173"]
 enable_signup = true
 
+[auth.email.smtp]
+host = "smtp.sendgrid.net"
+port = 587
+user = "apikey"
+pass = "env(SENDGRID_API_KEY)"
+admin_email = "env(SENDGRID_FROM_EMAIL)"
+sender_name = "Divide Casa Comigo"
+
 [storage]
 enabled = true
 file_size_limit = "10MiB"

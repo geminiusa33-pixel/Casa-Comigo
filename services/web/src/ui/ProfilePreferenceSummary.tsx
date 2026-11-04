@@ -34,7 +34,7 @@ const genderLabels: Record<string, string> = {
 
 const leaseLabels: Record<string, string> = {
   any: "Contrato: sem preferência",
-  own_name: "Contrato em seu nome",
+  own_name: "Contrato em teu nome",
   joint: "Contrato em conjunto",
   other: "Contrato: a combinar",
 };

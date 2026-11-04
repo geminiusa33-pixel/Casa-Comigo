@@ -150,7 +150,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
     };
     const extension = extensions[file.type];
     if (!extension) {
-      setError("Escolha uma imagem JPEG, PNG ou WebP.");
+      setError("Escolhe uma imagem JPEG, PNG ou WebP.");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -229,7 +229,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
   function useBrowserLocation() {
     setError("");
     if (!navigator.geolocation) {
-      setError("Este browser não disponibiliza localização. Pode preencher a zona manualmente.");
+      setError("Este browser não disponibiliza localização. Podes preencher a zona manualmente.");
       return;
     }
 
@@ -245,8 +245,8 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
       },
       (positionError) => {
         setError(positionError.code === positionError.PERMISSION_DENIED
-          ? "Permissão de localização recusada. Pode introduzir as coordenadas manualmente."
-          : "Não foi possível obter a localização. Pode introduzi-la manualmente.");
+          ? "Permissão de localização recusada. Podes introduzir as coordenadas manualmente."
+          : "Não foi possível obter a localização. Podes introduzi-la manualmente.");
         setLocating(false);
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
@@ -289,11 +289,11 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
         return;
       }
 
-      setError("Não foi possível identificar um distrito ou ilha nesta localização. Preencha a área aproximada manualmente.");
+      setError("Não foi possível identificar um distrito ou ilha nesta localização. Preenche a área aproximada manualmente.");
     } catch (caught) {
       if (lookupVersion !== locationLookupVersion.current) return;
       console.error("Não foi possível carregar os limites administrativos locais.", caught);
-      setError("Não foi possível carregar os limites administrativos locais. Preencha a área aproximada manualmente.");
+      setError("Não foi possível carregar os limites administrativos locais. Preenche a área aproximada manualmente.");
     }
   }
 
@@ -324,7 +324,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
           }),
         });
       } else if (discoveryVisible) {
-        throw new Error("Indique uma cidade/área e defina a localização antes de ativar a descoberta.");
+        throw new Error("Indica uma cidade/área e define a localização antes de ativares a descoberta.");
       }
 
       const saved = await apiRequest<Profile>("/api/profile", session.access_token, {
@@ -354,7 +354,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
       });
       const completeProfile = updatedProfile?.searchArea ? { ...saved, searchArea: updatedProfile.searchArea } : saved;
       setProfile(completeProfile);
-      setNotice("Perfil guardado. A sua localização exata só é visível nesta conta.");
+      setNotice("Perfil guardado. A tua localização exata só é visível nesta conta.");
       onSaved();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível guardar o perfil.");
@@ -370,9 +370,9 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
       <header className="profile-editor-intro">
         <div className="profile-editor-intro-icon"><Person24Regular /></div>
         <div>
-          <span className="profile-editor-eyebrow">O seu espaço, à sua medida</span>
-          <h2>O seu perfil de partilha</h2>
-          <p>Conte um pouco sobre si e sobre a casa que procura. Pode atualizar estas escolhas quando quiser.</p>
+          <span className="profile-editor-eyebrow">O teu espaço, à tua medida</span>
+          <h2>O teu perfil de partilha</h2>
+          <p>Conta um pouco sobre ti e sobre a casa que procuras. Podes atualizar estas escolhas quando quiseres.</p>
         </div>
       </header>
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
@@ -383,13 +383,13 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
           <section className="profile-form-section">
             <header className="profile-section-heading">
               <span className="profile-section-icon"><Person24Regular /></span>
-              <div><h3>Sobre si</h3><p>Uma primeira impressão para quem também procura casa.</p></div>
+              <div><h3>Sobre ti</h3><p>Uma primeira impressão para quem também procura casa.</p></div>
             </header>
             <div className="profile-photo-control">
-              <ProfileAvatar name={displayName || "O seu perfil"} photoPath={photoPath} size={96} />
+              <ProfileAvatar name={displayName || "O teu perfil"} photoPath={photoPath} size={96} />
               <div>
                 <strong>Foto de perfil</strong>
-                <p>A sua foto aparece no ícone do perfil, na descoberta e nos matches.</p>
+                <p>A tua foto aparece no ícone do perfil, na descoberta e nos teus matches.</p>
                 <input
                   ref={photoInputRef}
                   className="profile-photo-input"
@@ -416,7 +416,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
               </label>
               <label className="profile-field profile-field-wide">
                 <span>Apresente-se</span>
-                <Textarea placeholder="O que gostaria que as pessoas soubessem sobre si?" value={bio} maxLength={2000} resize="vertical" onChange={(_, data) => setBio(data.value)} />
+                <Textarea placeholder="O que gostavas que as pessoas soubessem sobre ti?" value={bio} maxLength={2000} resize="vertical" onChange={(_, data) => setBio(data.value)} />
                 <small>Uma breve descrição ajuda a iniciar uma boa conversa.</small>
               </label>
             </div>
@@ -425,7 +425,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
           <section className="profile-form-section">
             <header className="profile-section-heading">
               <span className="profile-section-icon"><PeopleCommunity24Regular /></span>
-              <div><h3>A casa que procura</h3><p>Defina com quem gostaria de partilhar o seu espaço.</p></div>
+              <div><h3>A casa que procuras</h3><p>Define com quem gostarias de partilhar o teu espaço.</p></div>
             </header>
             <div className="profile-fields-grid">
               <label className="profile-field">
@@ -447,7 +447,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
               <Home24Regular />
               <div>
                 <Checkbox checked={hasPets} label="Animais em casa" onChange={(_, data) => setHasPets(data.checked === true)} />
-                <p>Indique se tem animais ou se aceita animais na casa.</p>
+                <p>Indica se tens animais ou se aceitas animais em casa.</p>
               </div>
             </div>
           </section>
@@ -465,11 +465,11 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
               </label>
               <label className="profile-field profile-field-wide">
                 <span>O que valoriza na convivência?</span>
-                <Textarea placeholder="Há temas ou valores importantes para si?" value={opinions} maxLength={2000} resize="vertical" onChange={(_, data) => setOpinions(data.value)} />
+                <Textarea placeholder="Há temas ou valores importantes para ti?" value={opinions} maxLength={2000} resize="vertical" onChange={(_, data) => setOpinions(data.value)} />
               </label>
               <label className="profile-field">
                 <span>Horário e rotina</span>
-                <Textarea placeholder="Como é um dia normal para si?" value={workSchedule} maxLength={500} resize="vertical" onChange={(_, data) => setWorkSchedule(data.value)} />
+                <Textarea placeholder="Como é um dia normal para ti?" value={workSchedule} maxLength={500} resize="vertical" onChange={(_, data) => setWorkSchedule(data.value)} />
               </label>
               <label className="profile-field">
                 <span>Cozinha e refeições</span>
@@ -481,7 +481,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
           <section className="profile-form-section profile-housing-section">
             <header className="profile-section-heading">
               <span className="profile-section-icon"><Home24Regular /></span>
-              <div><h3>Detalhes da casa</h3><p>Partilhe as suas condições preferidas para encontrarem um equilíbrio.</p></div>
+              <div><h3>Detalhes da casa</h3><p>Partilha as tuas condições preferidas para encontrarem um equilíbrio.</p></div>
             </header>
             <div className="profile-soft-note">
               <span>Preferências flexíveis</span>
@@ -489,9 +489,9 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
             </div>
             <div className="profile-fields-grid">
               <label className="profile-field">
-                <span>Quanto pode contribuir para a renda por mês?</span>
+                <span>Quanto podes contribuir para a renda por mês?</span>
                 <select value={rentContributionRange} required onChange={(event) => setRentContributionRange(event.target.value)}>
-                  <option value="" disabled>Escolha um escalão</option>
+                  <option value="" disabled>Escolhe um escalão</option>
                   {RENT_CONTRIBUTION_RANGES.map((range) => (
                     <option key={range.value} value={range.value}>{range.label}</option>
                   ))}
@@ -574,11 +574,11 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
           <section className="profile-form-section profile-location-section">
             <header className="profile-section-heading">
               <span className="profile-section-icon"><Location24Regular /></span>
-              <div><h3>Zona de procura</h3><p>Encontre pessoas que procuram viver perto de si.</p></div>
+              <div><h3>Zona de procura</h3><p>Encontra pessoas que procuram viver perto de ti.</p></div>
             </header>
             <div className="profile-hard-note">
               <span>Critério essencial para um match</span>
-              <p>A zona tem de ser compatível nos dois sentidos e ambos têm de escolher o mesmo escalão de renda.</p>
+              <p>A zona tem de ser compatível nos dois sentidos e tu e a outra pessoa têm de escolher o mesmo escalão de renda.</p>
             </div>
             <div className="profile-location-privacy">
               <ShieldCheckmark24Regular />
@@ -587,7 +587,7 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
             <Button className="profile-location-button" type="button" appearance="secondary" disabled={locating} onClick={useBrowserLocation}>
               <Location24Regular /> {locating ? "A obter localização…" : "Usar a minha localização"}
             </Button>
-            <p className="profile-location-hint">O browser pedirá permissão. Também pode preencher ou ajustar a localização manualmente.</p>
+            <p className="profile-location-hint">O browser pedirá permissão. Também podes preencher ou ajustar a localização manualmente.</p>
             <Suspense fallback={<div className="search-area-map-loading">A carregar mapa…</div>}>
               <SearchAreaMap
                 position={selectedPosition}
@@ -595,13 +595,13 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
                 onSelect={selectMapLocation}
               />
             </Suspense>
-            <p className="profile-map-caption">Clique no mapa para marcar a zona ou arraste o marcador. O círculo mostra o raio de procura.</p>
+            <p className="profile-map-caption">Clica no mapa para marcar a zona ou arrasta o marcador. O círculo mostra o raio de procura.</p>
             <p className="profile-map-privacy">Mapa por OpenStreetMap. O serviço de mapas recebe pedidos dos mosaicos da área visível; os dados do perfil não são enviados para esse serviço.</p>
             <div className="profile-fields-grid">
               <label className="profile-field profile-field-wide">
                 <span>Área aproximada</span>
                 <Input placeholder="Ex.: Distrito de Lisboa, Porto" value={areaLabel} maxLength={160} required onChange={(_, data) => { locationLookupVersion.current += 1; setAreaLabel(data.value); }} />
-                <small>Preenchida localmente com o distrito ou ilha ao escolher uma localização. Pode ajustá-la.</small>
+                <small>Preenchida localmente com o distrito ou ilha ao escolheres uma localização. Podes ajustá-la.</small>
               </label>
               <label className="profile-field">
                 <span>Latitude</span>
@@ -630,12 +630,12 @@ export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
                 label="Aparecer na descoberta"
                 onChange={(_, data) => setDiscoveryVisible(data.checked === true)}
               />
-              <p>O seu perfil será mostrado a pessoas em áreas de procura mutuamente compatíveis.</p>
+              <p>O teu perfil será mostrado a pessoas em áreas de procura mutuamente compatíveis.</p>
             </div>
           </div>
 
           <footer className="profile-form-footer">
-            <span><ShieldCheckmark24Regular /> A sua localização exata nunca é apresentada a outros utilizadores.</span>
+            <span><ShieldCheckmark24Regular /> A tua localização exata nunca é apresentada a outras pessoas.</span>
             <Button className="profile-save-button" type="submit" appearance="primary" disabled={saving}>
               {saving ? "A guardar…" : "Guardar perfil"}
             </Button>

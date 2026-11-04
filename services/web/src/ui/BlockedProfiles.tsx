@@ -47,10 +47,10 @@ export function BlockedProfiles({ session }: Props) {
   return (
     <Card style={{ padding: 24, borderRadius: 16, marginTop: 16 }}>
       <h2 style={{ marginTop: 0 }}>Perfis bloqueados</h2>
-      <p>As pessoas que bloqueou deixam de aparecer na descoberta e não podem continuar conversas consigo.</p>
+      <p>As pessoas que bloqueares deixam de aparecer na descoberta e não podem continuar conversas contigo.</p>
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {loading && <Spinner label="A carregar bloqueios…" />}
-      {!loading && profiles.length === 0 && !error && <Text>Não tem perfis bloqueados.</Text>}
+      {!loading && profiles.length === 0 && !error && <Text>Não tens perfis bloqueados.</Text>}
       {!loading && profiles.map((profile) => (
         <div key={profile.profileId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 0", borderTop: "1px solid #e5e5e5" }}>
           <Text>{profile.displayName}</Text>
