@@ -1,10 +1,13 @@
 using CasaComigo.Api.Data;
 using CasaComigo.Api.Endpoints;
 using CasaComigo.Api.Middleware;
+using CasaComigo.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
+using System.Threading.RateLimiting;
 using WebPush;
 
 if (args.Contains("--generate-vapid-keys", StringComparer.Ordinal))
@@ -42,6 +45,7 @@ builder.Services.AddScoped<IHousingGroupRepository, HousingGroupRepository>();
 builder.Services.AddScoped<IHousingGroupService, HousingGroupService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHttpClient<IContactEmailService, SendGridContactEmailService>();
 builder.Services.AddHostedService<PushNotificationBackgroundService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -72,15 +76,34 @@ builder.Services
 builder.Services.AddAuthorization();
 builder.Services.AddValidation();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("public-contact", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 3,
+                Window = TimeSpan.FromMinutes(15),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }));
+});
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:5173", "http://127.0.0.1:5173"];
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
-    policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+    policy.WithOrigins(corsOrigins)
         .AllowAnyHeader()
         .AllowAnyMethod()));
 
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseRouting();
 app.UseCors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -91,6 +114,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "casa-comi
     .WithName("Health");
 
 var api = app.MapGroup("/api").RequireAuthorization();
+app.MapGroup("/api/public").MapContactEndpoints();
 api.MapAuthEndpoints();
 api.MapProfileEndpoints();
 api.MapMatchingEndpoints();

@@ -29,4 +29,5 @@ public sealed record MatchResponse(
     string HomeTypePreference,
     string MoveInTiming,
     int? MinimumLeaseMonths,
-    string? PhotoPath);
+    string? PhotoPath,
+    string Porta65Status);

@@ -10,7 +10,7 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { Home24Regular } from "@fluentui/react-icons";
+import { Eye24Regular, EyeOff24Regular, Home24Regular } from "@fluentui/react-icons";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../api/supabase";
 import { authErrorMessage } from "../auth/authErrorMessage";
@@ -44,10 +44,11 @@ type AuthPanelProps = {
 
 export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelProps) {
   const styles = useStyles();
-  const [mode, setMode] = useState<"sign-in" | "sign-up">(initialMode);
+  const [mode, setMode] = useState<"sign-in" | "sign-up" | "forgot-password">(initialMode);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pending, setPending] = useState(false);
@@ -100,6 +101,18 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
 
     setPending(true);
     try {
+      if (mode === "forgot-password") {
+        const { error: resetError } = await authClient.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: window.location.origin,
+        });
+        if (resetError) {
+          setError(authErrorMessage(resetError.message));
+        } else {
+          setNotice("Se existir uma conta associada a este email, receberás uma mensagem com instruções para redefinir a palavra-passe.");
+        }
+        return;
+      }
+
       const result = mode === "sign-up"
         ? await authClient.auth.signUp({
             email: email.trim(),
@@ -125,6 +138,7 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
   }
 
   const isSignUp = mode === "sign-up";
+  const isForgotPassword = mode === "forgot-password";
 
   return (
     <div className={`${styles.page} auth-page`}>
@@ -147,13 +161,15 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
               <span aria-hidden="true">←</span> Voltar ao início
             </Button>
             <Text size={200} weight="semibold" style={{ color: "#58745e" }}>
-              {isSignUp ? "A tua próxima casa começa aqui" : "Bem-vindo de volta"}
+              {isSignUp ? "A tua próxima casa começa aqui" : isForgotPassword ? "Recupera o acesso à tua conta" : "Bem-vindo de volta"}
             </Text>
-            <h1 className={styles.title}>{isSignUp ? "Cria a tua conta" : "Inicia sessão"}</h1>
+            <h1 className={styles.title}>{isSignUp ? "Cria a tua conta" : isForgotPassword ? "Palavra-passe esquecida?" : "Inicia sessão"}</h1>
             <p className={styles.description}>
               {isSignUp
                 ? "Regista-te para começares a preparar o teu perfil de partilha."
-                : "Entra para continuares a preparar a tua experiência Casa Comigo."}
+                : isForgotPassword
+                  ? "Indica o email da tua conta e enviaremos instruções para escolheres uma nova palavra-passe."
+                  : "Entra para continuares a preparar a tua experiência Casa Comigo."}
             </p>
 
             {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
@@ -184,38 +200,61 @@ export function AuthPanel({ onAuthenticated, initialMode, onBack }: AuthPanelPro
                   required
                 />
               </div>
-              <div className={styles.field}>
-                <Label htmlFor="auth-password" required>Palavra-passe</Label>
-                <Input
-                  id="auth-password"
-                  type="password"
-                  autoComplete={isSignUp ? "new-password" : "current-password"}
-                  minLength={isSignUp ? 8 : undefined}
-                  value={password}
-                  onChange={(_, data) => setPassword(data.value)}
-                  required
-                />
-              </div>
+              {!isForgotPassword && (
+                <div className={styles.field}>
+                  <Label htmlFor="auth-password" required>Palavra-passe</Label>
+                  <Input
+                    id="auth-password"
+                    type={passwordVisible ? "text" : "password"}
+                    autoComplete={isSignUp ? "new-password" : "current-password"}
+                    minLength={isSignUp ? 8 : undefined}
+                    value={password}
+                    onChange={(_, data) => setPassword(data.value)}
+                    contentAfter={
+                      <Button
+                        type="button"
+                        appearance="transparent"
+                        size="small"
+                        icon={passwordVisible ? <EyeOff24Regular /> : <Eye24Regular />}
+                        aria-label={passwordVisible ? "Ocultar palavra-passe" : "Mostrar palavra-passe"}
+                        title={passwordVisible ? "Ocultar palavra-passe" : "Mostrar palavra-passe"}
+                        onClick={() => setPasswordVisible((visible) => !visible)}
+                      />
+                    }
+                    required
+                  />
+                </div>
+              )}
               <Button className="auth-primary" type="submit" appearance="primary" disabled={pending}>
-                {pending ? "Aguarda…" : isSignUp ? "Criar conta" : "Entrar"}
+                {pending ? "Aguarda…" : isSignUp ? "Criar conta" : isForgotPassword ? "Enviar instruções" : "Entrar"}
               </Button>
             </form>
 
             <div className={styles.switch}>
-              <Text size={300}>
-                {isSignUp ? "Já tens conta? " : "Ainda não tens conta? "}
-              </Text>
               <Button
                 appearance="transparent"
                 disabled={pending}
                 onClick={() => {
-                  setMode(isSignUp ? "sign-in" : "sign-up");
+                  setMode(isForgotPassword ? "sign-in" : isSignUp ? "sign-in" : "sign-up");
                   setError("");
                   setNotice("");
                 }}
               >
-                {isSignUp ? "Iniciar sessão" : "Registar"}
+                {isForgotPassword ? "Voltar a iniciar sessão" : isSignUp ? "Já tens conta? Iniciar sessão" : "Ainda não tens conta? Registar"}
               </Button>
+              {mode === "sign-in" && (
+                <Button
+                  appearance="transparent"
+                  disabled={pending}
+                  onClick={() => {
+                    setMode("forgot-password");
+                    setError("");
+                    setNotice("");
+                  }}
+                >
+                  Esqueceste-te da palavra-passe?
+                </Button>
+              )}
             </div>
             <p className={styles.note}>
               A autenticação usa o Supabase. A tua palavra-passe não é enviada nem guardada pela API Casa Comigo.

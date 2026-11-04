@@ -41,32 +41,41 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
   const [groupNameDraft, setGroupNameDraft] = useState("");
   const [confirmLeaveGroupId, setConfirmLeaveGroupId] = useState("");
   const groupsRequestInFlight = useRef(false);
+  const groupsRequestGeneration = useRef(0);
 
   const loadGroups = useCallback(async (signal?: AbortSignal) => {
     if (groupsRequestInFlight.current) return;
     groupsRequestInFlight.current = true;
+    const requestGeneration = ++groupsRequestGeneration.current;
     try {
       const results = await apiRequest<HousingGroup[]>("/api/housing-groups", session.access_token, { signal });
+      if (requestGeneration !== groupsRequestGeneration.current) return;
       setGroups(results);
       setSelectedGroupId((current) => current && results.some((group) => group.id === current)
         ? current
         : results[0]?.id ?? "");
       setError("");
     } catch (caught) {
-      if (!signal?.aborted) setError(caught instanceof Error ? caught.message : "Não foi possível carregar os grupos.");
+      if (requestGeneration === groupsRequestGeneration.current && !signal?.aborted) {
+        setError(caught instanceof Error ? caught.message : "Não foi possível carregar os grupos.");
+      }
     } finally {
-      if (!signal?.aborted) setLoading(false);
-      groupsRequestInFlight.current = false;
+      if (requestGeneration === groupsRequestGeneration.current) {
+        if (!signal?.aborted) setLoading(false);
+        groupsRequestInFlight.current = false;
+      }
     }
   }, [session.access_token]);
 
   useEffect(() => {
     const controller = new AbortController();
     void loadGroups(controller.signal);
-    const intervalId = window.setInterval(() => void loadGroups(), 5000);
+    const intervalId = window.setInterval(() => void loadGroups(controller.signal), 5000);
     return () => {
       controller.abort();
       window.clearInterval(intervalId);
+      groupsRequestGeneration.current++;
+      groupsRequestInFlight.current = false;
     };
   }, [loadGroups]);
 
@@ -267,7 +276,7 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
       {notice && <MessageBar intent="success"><MessageBarBody>{notice}</MessageBarBody></MessageBar>}
       {groups.length === 0 && (
         <Card style={{ padding: 20 }}>
-          <Text>Ainda não tem grupos. Quando um match escolher a mesma lotação total, ambos iniciam um grupo.</Text>
+          <Text>Ainda não tem grupos ativos. Um grupo concluído ou encerrado deixa de aparecer aqui.</Text>
         </Card>
       )}
       {groups.length > 0 && (
@@ -277,13 +286,15 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
               const confirmed = group.members.filter((member) => member.confirmedCompletion).length;
               return (
                 <Card key={group.id} style={{ padding: 16, minWidth: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12 }}>
-                    <div>
+                  <div className="housing-group-card-heading">
+                    <div className="housing-group-card-title">
                       <Text weight="semibold" size={400}>{group.name}</Text>
-                      <Text as="p" size={200} style={{ margin: "3px 0" }}>Grupo {group.memberCount}/{group.targetOccupants}</Text>
-                      <Text as="p" style={{ margin: "4px 0" }}>
-                        {group.status === "completed" ? "Concluído — deixou de aparecer na descoberta" : `${group.targetOccupants - group.memberCount} lugar(es) disponível(is)`}
-                      </Text>
+                      <span className="housing-group-capacity">{group.memberCount} de {group.targetOccupants} pessoas</span>
+                      <span className="housing-group-availability">
+                        {group.status === "completed"
+                          ? "Concluído — deixou de aparecer na descoberta"
+                          : `${group.targetOccupants - group.memberCount} ${group.targetOccupants - group.memberCount === 1 ? "lugar disponível" : "lugares disponíveis"}`}
+                      </span>
                     </div>
                     <Button
                       size="small"
@@ -301,7 +312,7 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
                   </div>
                   <div style={{ marginTop: 8 }}>
                     {editingGroupId === group.id ? (
-                      <form onSubmit={(event) => void renameGroup(event, group.id)} style={{ display: "flex", gap: 8 }}>
+                      <form className="housing-group-rename-form" onSubmit={(event) => void renameGroup(event, group.id)}>
                         <Input
                           aria-label="Nome do grupo"
                           maxLength={80}
@@ -319,7 +330,7 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
                           setGroupNameDraft(group.name);
                           setEditingGroupId(group.id);
                         }}
-                      >Editar nome</Button>
+                      >Alterar nome do grupo</Button>
                     )}
                   </div>
                   <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
@@ -414,8 +425,9 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
           </div>
           {selectedGroup && (
             <Card style={{ padding: 18, display: "grid", gridTemplateRows: "auto minmax(220px, 1fr) auto", gap: 14, minHeight: 420, minWidth: 0 }}>
-              <div>
-                <Text size={400} weight="semibold">{selectedGroup.name} · {selectedGroup.memberCount}/{selectedGroup.targetOccupants}</Text>
+              <div className="housing-group-chat-heading">
+                <Text size={400} weight="semibold">{selectedGroup.name}</Text>
+                <span className="housing-group-capacity">{selectedGroup.memberCount} de {selectedGroup.targetOccupants} pessoas</span>
                 <Text as="p" size={200}>Só os membros deste grupo podem ler e enviar mensagens.</Text>
               </div>
               <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, padding: "4px 2px" }}>

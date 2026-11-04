@@ -23,6 +23,20 @@ public sealed class MatchingService(
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<DiscoveryProfileResponse>> GetReconsiderableAsync(
+        Guid profileId,
+        CancellationToken cancellationToken)
+    {
+        var profile = await profileService.GetAsync(profileId, cancellationToken);
+        if (profile is null)
+            throw new ProfileValidationException("Complete o seu perfil antes de descobrir pessoas.");
+        if (!profile.ProfileComplete || !profile.DiscoveryVisible)
+            throw new ProfileValidationException("Complete o perfil, guarde a zona e ative a descoberta nas definições.");
+
+        return await repository.GetReconsiderableAsync(profileId, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<LikeResponse> LikeAsync(
         Guid profileId,
         Guid recipientId,

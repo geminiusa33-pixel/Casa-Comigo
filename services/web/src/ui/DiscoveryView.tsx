@@ -50,17 +50,25 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
   const [notice, setNotice] = useState("");
   const [newMatch, setNewMatch] = useState<{ id: string; displayName: string } | null>(null);
   const [actingOnGroupId, setActingOnGroupId] = useState<string | null>(null);
+  const [showPastProfiles, setShowPastProfiles] = useState(false);
+  const [reconsideredProfileIds, setReconsideredProfileIds] = useState<Set<string>>(() => new Set());
 
-  const loadProfiles = useCallback(async () => {
+  const loadProfiles = useCallback(async (includePastProfiles = showPastProfiles) => {
     setLoading(true);
     setError("");
     try {
-      const [results, currentProfile, housingGroups] = await Promise.all([
+      const [results, currentProfile, housingGroups, reconsidered] = await Promise.all([
         apiRequest<DiscoveryProfile[]>("/api/discovery/profiles", session.access_token),
         apiRequest<Profile>("/api/profile", session.access_token),
         apiRequest<HousingGroup[]>("/api/housing-groups/discovery", session.access_token),
+        includePastProfiles
+          ? apiRequest<DiscoveryProfile[]>("/api/discovery/profiles/reconsider", session.access_token)
+          : Promise.resolve([] as DiscoveryProfile[]),
       ]);
-      setProfiles(results);
+      const resultIds = new Set(results.map((profile) => profile.id));
+      const additionalProfiles = reconsidered.filter((profile) => !resultIds.has(profile.id)).slice(0, 5);
+      setProfiles([...results, ...additionalProfiles]);
+      setReconsideredProfileIds(new Set(additionalProfiles.map((profile) => profile.id)));
       setOwnProfile(currentProfile);
       setGroups(housingGroups);
     } catch (caught) {
@@ -68,7 +76,7 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
     } finally {
       setLoading(false);
     }
-  }, [session.access_token]);
+  }, [session.access_token, showPastProfiles]);
 
   useEffect(() => { void loadProfiles(); }, [loadProfiles]);
 
@@ -176,15 +184,27 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
           <h2 id="discovery-section-title">Pessoas compatíveis</h2>
           <p>Conheça quem procura casa na sua zona e partilha um ritmo de vida parecido.</p>
         </div>
-        <Button
-          className="discovery-refresh"
-          appearance="secondary"
-          icon={<ArrowClockwise24Regular />}
-          disabled={loading}
-          onClick={() => void loadProfiles()}
-        >
-          Atualizar
-        </Button>
+        <div className="discovery-toolbar-actions">
+          <Button
+            className="discovery-refresh"
+            appearance="secondary"
+            icon={<ArrowClockwise24Regular />}
+            disabled={loading}
+            onClick={() => void loadProfiles()}
+          >
+            Atualizar
+          </Button>
+          <Button
+            className={`discovery-reconsider${showPastProfiles ? " is-active" : ""}`}
+            appearance={showPastProfiles ? "primary" : "secondary"}
+            icon={<PeopleCommunity24Regular />}
+            disabled={loading}
+            aria-pressed={showPastProfiles}
+            onClick={() => setShowPastProfiles((current) => !current)}
+          >
+            {showPastProfiles ? "Ocultar perfis anteriores" : "Ver até 5 perfis anteriores"}
+          </Button>
+        </div>
       </div>
 
       <div className="discovery-assurance">
@@ -208,8 +228,13 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
                   <div>
                     <Badge appearance="tint" color="success">Grupo aberto</Badge>
                     <strong className="discovery-housing-group-name">{group.name}</strong>
-                    <h4>{group.memberCount}/{group.targetOccupants} pessoas</h4>
-                    <p>{group.targetOccupants - group.memberCount} lugar(es) disponível(is)</p>
+                    <div className="discovery-housing-group-capacity">
+                      <strong>{group.memberCount} de {group.targetOccupants} pessoas</strong>
+                      <span>
+                        {group.targetOccupants - group.memberCount}{" "}
+                        {group.targetOccupants - group.memberCount === 1 ? "lugar disponível" : "lugares disponíveis"}
+                      </span>
+                    </div>
                   </div>
                   <PeopleCommunity24Regular />
                 </div>
@@ -309,6 +334,11 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
                     </div>
                     <span className="discovery-profile-index">{String(index + 1).padStart(2, "0")}</span>
                   </div>
+                  {reconsideredProfileIds.has(profile.id) && (
+                    <Badge className="discovery-reconsidered-badge" appearance="tint" color="brand">
+                      Perfil anterior · até 5
+                    </Badge>
+                  )}
 
                   <p className="discovery-profile-bio">
                     {profile.bio || "Ainda não adicionou uma descrição."}

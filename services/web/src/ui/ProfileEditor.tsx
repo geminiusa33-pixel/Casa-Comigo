@@ -29,9 +29,10 @@ const SearchAreaMap = lazy(() => import("./SearchAreaMap").then(({ SearchAreaMap
 type Props = {
   session: Session;
   onPhotoPathChange: (photoPath: string | null) => void;
+  onSaved: () => void;
 };
 
-export function ProfileEditor({ session, onPhotoPathChange }: Props) {
+export function ProfileEditor({ session, onPhotoPathChange, onSaved }: Props) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
@@ -55,6 +56,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
   const [homeTypePreference, setHomeTypePreference] = useState("any");
   const [moveInTiming, setMoveInTiming] = useState("flexible");
   const [minimumLeaseMonths, setMinimumLeaseMonths] = useState("");
+  const [porta65Status, setPorta65Status] = useState("unknown");
   const [discoveryVisible, setDiscoveryVisible] = useState(false);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -103,6 +105,7 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
         setHomeTypePreference(data.homeTypePreference);
         setMoveInTiming(data.moveInTiming);
         setMinimumLeaseMonths(data.minimumLeaseMonths === null ? "" : String(data.minimumLeaseMonths));
+        setPorta65Status(data.porta65Status ?? "unknown");
         setDiscoveryVisible(data.discoveryVisible);
         if (data.searchArea) {
           setLatitude(String(data.searchArea.latitude));
@@ -345,12 +348,14 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
           homeTypePreference,
           moveInTiming,
           minimumLeaseMonths: minimumLeaseMonths.trim() === "" ? null : Number(minimumLeaseMonths),
+          porta65Status,
           discoveryVisible,
         }),
       });
       const completeProfile = updatedProfile?.searchArea ? { ...saved, searchArea: updatedProfile.searchArea } : saved;
       setProfile(completeProfile);
       setNotice("Perfil guardado. A sua localização exata só é visível nesta conta.");
+      onSaved();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível guardar o perfil.");
     } finally {
@@ -548,6 +553,20 @@ export function ProfileEditor({ session, onPhotoPathChange }: Props) {
               <label className="profile-field">
                 <span>Duração mínima do contrato (meses)</span>
                 <Input type="number" min={1} max={120} placeholder="Sem preferência" value={minimumLeaseMonths} onChange={(_, data) => setMinimumLeaseMonths(data.value)} />
+              </label>
+              <label className="profile-field profile-field-wide">
+                <span>Porta 65-Jovem</span>
+                <select value={porta65Status} onChange={(event) => setPorta65Status(event.target.value)}>
+                  <option value="unknown">Prefiro não indicar</option>
+                  <option value="interested">Tenho interesse em candidatar-me</option>
+                  <option value="possibly_eligible">Posso reunir condições (por confirmar)</option>
+                  <option value="receiving">Estou a receber apoio</option>
+                  <option value="not_applicable">Não se aplica</option>
+                </select>
+                <small>
+                  A situação não confirma elegibilidade. É partilhada apenas com matches e membros do grupo.
+                  {" "}<a href="https://www.portaldahabitacao.pt/porta-65-jovem" target="_blank" rel="noreferrer">Consultar o Portal da Habitação</a>.
+                </small>
               </label>
             </div>
           </section>

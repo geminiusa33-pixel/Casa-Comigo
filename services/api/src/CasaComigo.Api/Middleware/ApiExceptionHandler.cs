@@ -1,4 +1,5 @@
 using CasaComigo.Api.Data;
+using CasaComigo.Api.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -58,6 +59,14 @@ public sealed class ApiExceptionHandler(
                     StatusCodes.Status409Conflict,
                     "Ação temporariamente indisponível",
                     conflictException.Message,
+                    cancellationToken);
+                return true;
+            case ContactDeliveryException:
+                await WriteProblemDetailsAsync(
+                    httpContext,
+                    StatusCodes.Status502BadGateway,
+                    "Não foi possível enviar a mensagem",
+                    "O serviço de email não confirmou o envio. Tente novamente mais tarde.",
                     cancellationToken);
                 return true;
             default:

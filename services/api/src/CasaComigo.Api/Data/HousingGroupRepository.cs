@@ -368,6 +368,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                   select 1 from public.housing_group_members member
                   where member.group_id = group_row.id and member.profile_id = $1
               )
+                and group_row.status = 'open'
                 and not exists (
                     select 1 from public.housing_group_members member
                     where member.group_id = group_row.id and member.profile_id <> $1
@@ -397,7 +398,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
             return [];
 
         var groupIds = groups.Select(group => group.Id).ToArray();
-        var membersByGroup = await GetMembersAsync(connection, groupIds, cancellationToken);
+        var membersByGroup = await GetMembersAsync(connection, groupIds, !discoverable, cancellationToken);
         var requestsByGroup = discoverable
             ? new Dictionary<Guid, List<HousingGroupJoinRequestResponse>>()
             : await GetPendingRequestsAsync(connection, groupIds, profileId, cancellationToken);
@@ -427,6 +428,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
     private static async Task<Dictionary<Guid, List<HousingGroupMemberResponse>>> GetMembersAsync(
         NpgsqlConnection connection,
         Guid[] groupIds,
+        bool includePorta65Status,
         CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
@@ -442,7 +444,8 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                    profile.cooking_habits, profile.rent_contribution_range,
                    profile.lease_holder_preference, profile.bills_preference,
                    profile.furnished_preference, profile.preferred_bathrooms, profile.preferred_bedrooms,
-                   profile.home_type_preference, profile.move_in_timing, profile.minimum_lease_months
+                   profile.home_type_preference, profile.move_in_timing, profile.minimum_lease_months,
+                   profile.porta65_status
             from public.housing_group_members member
             join public.profiles profile on profile.id = member.profile_id
             left join public.search_areas area on area.profile_id = profile.id
@@ -471,7 +474,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                 reader.GetString(4),
                 reader.IsDBNull(5) ? null : reader.GetString(5),
                 reader.GetBoolean(6),
-                ReadProfile(reader, 7)));
+                ReadProfile(reader, 7, includePorta65Status)));
         }
 
         return members;
@@ -541,7 +544,7 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
                 reader.GetInt32(8),
                 reader.IsDBNull(9) ? null : reader.GetBoolean(9),
                 AsUtc(reader.GetDateTime(10)),
-                ReadProfile(reader, 11)));
+                ReadProfile(reader, 11, includePorta65: false)));
         }
 
         return requests;
@@ -563,7 +566,10 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
     private static HousingGroupMessageResponse ReadMessage(NpgsqlDataReader reader) =>
         new(reader.GetGuid(0), reader.GetGuid(1), reader.GetGuid(2), reader.GetString(3), AsUtc(reader.GetDateTime(4)));
 
-    private static HousingGroupProfileResponse ReadProfile(NpgsqlDataReader reader, int index) =>
+    private static HousingGroupProfileResponse ReadProfile(
+        NpgsqlDataReader reader,
+        int index,
+        bool includePorta65 = true) =>
         new(
             reader.GetString(index),
             reader.IsDBNull(index + 1) ? null : reader.GetInt16(index + 1),
@@ -581,7 +587,8 @@ public sealed class HousingGroupRepository(NpgsqlDataSource dataSource) : IHousi
             reader.IsDBNull(index + 13) ? null : reader.GetInt16(index + 13),
             reader.GetString(index + 14),
             reader.GetString(index + 15),
-            reader.IsDBNull(index + 16) ? null : reader.GetInt16(index + 16));
+            reader.IsDBNull(index + 16) ? null : reader.GetInt16(index + 16),
+            includePorta65 && !reader.IsDBNull(index + 17) ? reader.GetString(index + 17) : null);
 
     private static DateTimeOffset AsUtc(DateTime value) =>
         new(DateTime.SpecifyKind(value, DateTimeKind.Utc));

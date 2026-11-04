@@ -27,7 +27,8 @@ public sealed record ProfileResponse(
     bool ProfileComplete,
     SearchAreaResponse? SearchArea,
     string? PhotoPath,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    string Porta65Status);
 
 /// <summary>Dados privados da zona de procura, devolvidos apenas ao próprio utilizador.</summary>
 public sealed record SearchAreaResponse(
@@ -111,6 +112,10 @@ public sealed record UpdateProfileRequest
     /// <summary>Duração mínima do contrato em meses; não filtra matches.</summary>
     [Range(1, 120)]
     public int? MinimumLeaseMonths { get; init; }
+
+    /// <summary>Autoavaliação privada sobre o interesse ou possível elegibilidade para o Porta 65 Jovem.</summary>
+    [Required, RegularExpression("^(unknown|interested|possibly_eligible|not_applicable|receiving)$")]
+    public string Porta65Status { get; init; } = "unknown";
 
     /// <summary>Autoriza a apresentação do perfil a pessoas em zona mutuamente compatível.</summary>
     public bool DiscoveryVisible { get; init; }

@@ -32,12 +32,14 @@ export type Profile = {
   searchArea: SearchArea | null;
   photoPath: string | null;
   updatedAt: string;
+  porta65Status: string;
 };
 
-export type DiscoveryProfile = Omit<Profile, "id" | "discoveryVisible" | "profileComplete" | "searchArea" | "updatedAt"> & {
+export type DiscoveryProfile = Omit<Profile, "id" | "discoveryVisible" | "profileComplete" | "searchArea" | "updatedAt" | "porta65Status"> & {
   id: string;
   areaLabel: string;
   photoPath?: string | null;
+  porta65Status?: string | null;
   rentContributionRange: string;
 };
 
@@ -67,6 +69,7 @@ export type Match = {
   homeTypePreference?: string;
   moveInTiming?: string;
   minimumLeaseMonths?: number | null;
+  porta65Status: string;
 };
 
 export type ChatMessage = {

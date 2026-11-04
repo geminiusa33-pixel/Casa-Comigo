@@ -10,11 +10,71 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
     /// <inheritdoc />
     public async Task<IReadOnlyList<DiscoveryProfileResponse>> GetDiscoverableAsync(
         Guid profileId,
+        CancellationToken cancellationToken) =>
+        await GetDiscoveryProfilesAsync(profileId, reconsidered: false, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<DiscoveryProfileResponse>> GetReconsiderableAsync(
+        Guid profileId,
+        CancellationToken cancellationToken) =>
+        await GetDiscoveryProfilesAsync(profileId, reconsidered: true, cancellationToken);
+
+    private async Task<IReadOnlyList<DiscoveryProfileResponse>> GetDiscoveryProfilesAsync(
+        Guid profileId,
+        bool reconsidered,
         CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = """
+        var discoveryFilter = reconsidered
+            ? """
+              and (
+                  exists (
+                      select 1
+                      from public.profile_passes pp
+                      where pp.actor_id = $1
+                        and pp.recipient_id = p.id
+                        and pp.passed_at <= now() - interval '3 days'
+                  )
+                  or exists (
+                      select 1
+                      from public.housing_group_member_history own_history
+                      join public.housing_group_member_history previous_member
+                        on previous_member.group_id = own_history.group_id
+                      join public.housing_groups previous_group
+                        on previous_group.id = own_history.group_id
+                      where own_history.profile_id = $1
+                        and previous_member.profile_id = p.id
+                        and previous_group.status = 'completed'
+                  )
+              )
+              and not exists (
+                  select 1 from public.profile_passes recent_pass
+                  where recent_pass.actor_id = $1
+                    and recent_pass.recipient_id = p.id
+                    and recent_pass.passed_at > now() - interval '3 days'
+              )
+              """
+            : """
+              and not exists (
+                  select 1 from public.profile_passes pp
+                  where pp.actor_id = $1
+                    and pp.recipient_id = p.id
+                    and pp.passed_at > now() - interval '3 days'
+              )
+              and not exists (
+                  select 1
+                  from public.housing_group_member_history own_history
+                  join public.housing_group_member_history previous_member
+                    on previous_member.group_id = own_history.group_id
+                  join public.housing_groups previous_group
+                    on previous_group.id = own_history.group_id
+                  where own_history.profile_id = $1
+                    and previous_member.profile_id = p.id
+                    and previous_group.status = 'completed'
+              )
+              """;
+        var discoveryQuery = """
             select p.id, p.display_name, p.bio, p.preferred_housemates,
                    p.gender_preference, p.has_pets, p.interests, p.opinions,
                    p.work_schedule, p.cooking_habits, p.rent_contribution_range,
@@ -50,15 +110,12 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                   where candidate_member.profile_id = p.id
                     and own_member.profile_id = $1
               )
-              and not exists (
-                  select 1 from public.profile_passes pp
-                  where pp.actor_id = $1
-                    and pp.recipient_id = p.id
-                    and pp.passed_at > now() - interval '3 days'
-              )
-            order by p.updated_at desc, p.id
-            limit 50
             """;
+        command.CommandText = string.Concat(
+            discoveryQuery,
+            discoveryFilter,
+            "\norder by p.updated_at desc, p.id\nlimit ",
+            reconsidered ? "5" : "50");
         command.Parameters.AddWithValue(profileId);
 
         var profiles = new List<DiscoveryProfileResponse>();
@@ -170,7 +227,7 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                    other.bills_preference, other.furnished_preference,
                    other.preferred_bathrooms, other.preferred_bedrooms,
                    other.home_type_preference, other.move_in_timing,
-                   other.minimum_lease_months, photo.storage_object_path
+                   other.minimum_lease_months, photo.storage_object_path, other.porta65_status
             from public.matches m
             join public.profiles own on own.id = $1
             join public.profiles other on other.id =
@@ -226,7 +283,8 @@ public sealed class MatchingRepository(NpgsqlDataSource dataSource) : IMatchingR
                 reader.GetString(20),
                 reader.GetString(21),
                 reader.IsDBNull(22) ? null : reader.GetInt16(22),
-                reader.IsDBNull(23) ? null : reader.GetString(23)));
+                reader.IsDBNull(23) ? null : reader.GetString(23),
+                reader.GetString(24)));
         }
 
         return matches;

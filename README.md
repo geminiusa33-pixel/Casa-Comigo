@@ -77,9 +77,63 @@ $env:WebPush__VapidSubject = "mailto:contacto@exemplo.pt"
 
 Não partilhe nem adicione a chave privada ao Git. Depois de iniciar a aplicação, abra o sino de notificações e escolha **Ativar notificações do browser**; o browser pedirá autorização. Push requer `localhost` ou HTTPS e só será enviado aos browsers que o utilizador autorizou. A aplicação também continua a mostrar as notificações dentro da própria interface.
 
+### Recuperação de palavra-passe com SendGrid
+
+O formulário **Esqueceste-te da palavra-passe?** envia o pedido através do Supabase Auth. A pessoa recebe um link, escolhe e confirma uma nova palavra-passe na aplicação. A API Casa Comigo não recebe nem guarda palavras-passe, nem precisa da chave SendGrid.
+
+Para produção, configura o envio no projeto Supabase alojado:
+
+1. No SendGrid, autentica um domínio ou verifica um endereço de remetente e cria uma API key com permissão de envio de email. Guarda a chave como segredo.
+2. No painel do Supabase, abre as definições de **Authentication / SMTP** e ativa o SMTP personalizado. Usa:
+   - Host: `smtp.sendgrid.net`
+   - Porta: `587` (STARTTLS)
+   - Utilizador: `apikey`
+   - Palavra-passe: a API key do SendGrid
+   - Remetente: o endereço verificado no SendGrid
+3. Em **Authentication / URL Configuration**, define o URL do site publicado e acrescenta os URLs da aplicação às listas de redirecionamento permitidas. Para desenvolvimento local, permite `http://localhost:5173`; em produção, permite também o domínio HTTPS da aplicação.
+4. Personaliza o template de recuperação de palavra-passe em **Authentication / Email Templates**, mantendo o link de ação de recuperação fornecido pelo Supabase (`{{ .ConfirmationURL }}`).
+
+Não coloques a API key do SendGrid em `services/web/.env.local`, em variáveis `VITE_*`, no código da aplicação, nem na API Casa Comigo: as credenciais SMTP ficam apenas nas definições seguras do projeto Supabase. No Supabase local, os emails de recuperação continuam a ser capturados pelo Inbucket em `http://localhost:54324`; o SendGrid só é necessário para entrega de email no ambiente alojado.
+
+### Formulário de contacto com SendGrid
+
+O formulário público de contacto envia mensagens pela API .NET, usando a API v3 do SendGrid. O destinatário é configurado no servidor e o endereço de resposta é o email que a pessoa indicar.
+
+1. No SendGrid, autentique o domínio/remetente e crie uma API key com permissão **Mail Send**.
+2. No serviço que aloja a API, configure `SendGrid__ApiKey`, `SendGrid__FromEmail`, `SendGrid__FromName=Casa Comigo` e `Contact__ToEmail=tiagopereiracode@gmail.com`. Use os campos correspondentes em `.env.api.production.example` como referência, mas não publique valores reais nesse ficheiro.
+3. Configure `Cors__AllowedOrigins__0` com o URL HTTPS exato do frontend; se tiver mais origens, use índices `__1`, `__2`, etc. Reinicie a API depois de guardar a configuração.
+4. Em desenvolvimento local, configure as mesmas variáveis `SendGrid__...` no terminal da API. Sem configuração, o endpoint responde explicitamente com `503`; por IP, o formulário permite no máximo três envios por cada 15 minutos. Teste com `services/api/src/CasaComigo.Api/Contact.http`.
+
+Nunca coloque a API key em `services/web/.env.local`, em `VITE_*`, no Git ou no browser. A chave não é necessária para recuperar palavras-passe: esse fluxo usa o SMTP personalizado nas definições do Supabase, conforme a secção anterior.
+
+### Donativos opcionais com Stripe Payment Links
+
+Para este MVP foi escolhida a opção sem código de pagamento no backend:
+
+1. Crie/ative a conta Stripe e complete os dados de negócio solicitados no Dashboard.
+2. Em **Payment Links**, crie três links de donativo pontual em EUR: 3 €, 5 € e 10 €. Ative MB WAY e Multibanco nas definições de métodos de pagamento e confirme que o Dashboard permite esses métodos para cada link/conta.
+3. Copie os URLs públicos para `VITE_STRIPE_COFFEE_3_URL`, `VITE_STRIPE_COFFEE_5_URL` e `VITE_STRIPE_COFFEE_10_URL` nas variáveis do frontend local ou do projeto Vercel e volte a publicar o frontend. Estes URLs são concebidos para partilha; não são chaves secretas. A aplicação não necessita de `STRIPE_SECRET_KEY`.
+4. Teste primeiro com os métodos de teste oferecidos pela Stripe. Só ative pagamentos reais quando a conta estiver verificada e os termos, contacto, privacidade e informação fiscal do projeto estiverem revistos.
+
+MB WAY normalmente confirma o pagamento de forma imediata; Multibanco é um método com confirmação atrasada — a pessoa pode pagar o talão mais tarde. A página de retorno do Stripe não deve ser interpretada como prova de que um pagamento Multibanco foi liquidado. A elegibilidade e disponibilidade dos métodos dependem da conta e das definições Stripe. Consulte a [documentação de Payment Links](https://docs.stripe.com/payment-links), [MB WAY](https://docs.stripe.com/payments/mb-way) e [Multibanco](https://docs.stripe.com/payments/multibanco).
+
+### Porta 65-Jovem e informação de arrendamento
+
+O perfil permite indicar interesse/situação relativamente ao Porta 65-Jovem. Esta autoavaliação é apresentada a matches e membros do grupo — não aparece na descoberta — e nunca certifica elegibilidade. O programa destina-se a jovens dos 18 aos 35 anos, mas a candidatura depende dos restantes requisitos em vigor; confirme-os no [Portal da Habitação](https://www.portaldahabitacao.pt/porta-65-jovem). A página inicial também inclui informação geral sobre contrato, recibos e arrendamento; ela não substitui aconselhamento jurídico/fiscal nem constitui uma interpretação vinculativa das regras.
+
+### Preparação para publicar
+
+- Aloje a API .NET e configure as variáveis server-side em `.env.api.production.example` no gestor de segredos do host. Não carregue esse ficheiro para o host como se fosse uma fonte de segredos.
+- No Vercel, configure `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e, quando existirem, os três URLs de Stripe Payment Links. Variáveis `VITE_*` são públicas e ficam incluídas no bundle do browser.
+- Configure o domínio HTTPS no SMTP e nos URLs de redirecionamento do Supabase Auth; a API deve aceitar apenas a origem real do frontend em `Cors__AllowedOrigins__0`.
+- Aplique a migration Porta 65 apenas ao projeto Supabase correto, depois de confirmar o destino e a cópia de segurança. Não use `db reset` em produção.
+- Antes do lançamento público, finalize e reveja os termos e a política de privacidade, incluindo identidade do responsável pelo serviço, retenção de dados, exercício de direitos, moderação, segurança, reclamações e obrigações fiscais dos donativos. Faça também testes com contas distintas e revise RLS, autenticação, backups e logs.
+
 ### Testar registo, login, perfil e matching
 
 Abra `http://localhost:5173`, escolha **Registar**, e crie uma conta com nome, email e palavra-passe de pelo menos 8 caracteres. Se for pedido para confirmar o email, consulte `http://localhost:54324`; depois volte à aplicação e inicie sessão. Após entrar, a interface envia o token de acesso para `GET /api/auth/session`. Uma confirmação na página indica que a API local validou esse token. O trigger da migration cria automaticamente o perfil inicial com o nome indicado no registo. A palavra-passe é tratada pelo Supabase Auth; a API Casa Comigo não a recebe.
+
+Em **Descobrir**, use **Ver até 5 perfis anteriores** para consultar perfis rejeitados há mais de três dias ou pessoas de grupos concluídos. A opção respeita os mesmos critérios de visibilidade, zona e escalão de renda, e não inclui pessoas com quem já tem um match nem membros de grupos ativos. No separador **Conversas**, aparecem apenas matches e grupos ativos; o contador de notificações fica no sino.
 
 Abra **Perfil** para adicionar uma foto JPEG, PNG ou WebP (até 10 MB), que aparece no ícone da conta, na descoberta e nos matches. As fotos ficam num bucket privado e só são servidas ao próprio utilizador, a perfis geograficamente elegíveis ou a membros/candidatos compatíveis de um grupo. No mesmo ecrã pode editar a apresentação e as preferências de habitação: número total de pessoas na casa (incluindo o próprio), escalão obrigatório de contribuição mensal para renda (200–300 €, 301–400 €, 401–500 € ou 501–600 €), titular do contrato, divisão de despesas/recibos, mobília, quartos, casas de banho, tipo de casa, prazo de mudança e duração mínima do contrato. Os perfis individuais e grupos só são sugeridos quando o escalão de renda coincide exatamente; os totais mostram a soma dos limites inferiores e superiores dos escalões escolhidos. Perfis antigos ficam sem escalão até o utilizador escolher um, e não aparecem na descoberta nesse intervalo. O raio de procura é escolhido em passos de 5 km, entre 5 e 50 km. A lotação comum cria um grupo quando ocorre o primeiro match; as restantes preferências são informativas e não impedem matches. A zona tem de ser compatível nos dois sentidos com cada pessoa do grupo. A localização pode ser obtida pelo browser apenas depois de carregar no botão GPS e aceitar a permissão, ou escolhida clicando no mapa e arrastando o marcador; também pode ser inserida manualmente. O mapa usa mosaicos OpenStreetMap servidos por openstreetmap.fr e precisa de ligação à internet. O serviço de mapas recebe pedidos relativos à área visível, mas os dados do perfil não são enviados para esse serviço. Guarde um nome de área aproximada, coordenadas e raio; as coordenadas são devolvidas apenas ao dono do perfil. Ative a opção de descoberta para aparecer a outros utilizadores. Para testar matching e chat, crie duas contas locais, complete e ative ambos os perfis com escalões de renda iguais e áreas/raios mutuamente compatíveis, depois envie gostos pelos cartões em **Descobrir**. O match só aparece se os dois gostarem. Se ambas as pessoas escolherem a mesma lotação, é criado um grupo com nome inicial da área (por exemplo, 2/4); qualquer membro pode personalizar o nome e abrir o perfil completo dos membros e de quem pede entrada. Ao iniciar o grupo, a conversa individual deixa de aparecer e a conversa passa a ser a do grupo; o histórico anterior é copiado e fica disponível também para quem entrar mais tarde. O total do intervalo de renda dos membros aparece na descoberta de grupos e no painel do grupo; nos perfis individuais e nos matches é mostrado o intervalo total do par. As pessoas que partilham um grupo deixam de aparecer na descoberta de pessoas umas para as outras enquanto forem membros. Qualquer membro pode **Sair do grupo**; depois de sair, volta a poder descobrir os restantes membros e deixa de ter acesso à conversa. Se todos saírem, o grupo é encerrado automaticamente. Outros perfis podem pedir entrada se tiverem o mesmo escalão de renda e todos os membros atuais têm de aprovar. O grupo permanece visível enquanto houver lugares, até todos confirmarem **Concluído**; cada pessoa pode participar em vários grupos. Ao cancelar o match que originou o grupo, este e o histórico de grupo permanecem; as mensagens da conversa individual deixam de ser acessíveis. Os gostos recíprocos são removidos e o par pode voltar a aparecer na descoberta se continuar elegível. Pode bloquear ou denunciar um perfil diretamente na descoberta ou numa conversa; os bloqueios podem ser revistos e removidos em **Perfil**. Os pedidos de API estão documentados em `services/api/src/CasaComigo.Api/Auth.http`.
 

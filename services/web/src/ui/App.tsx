@@ -32,6 +32,7 @@ import { ProfileEditor } from "./ProfileEditor";
 import { LandingPage } from "./LandingPage";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { NotificationsBell } from "./NotificationsBell";
+import { PasswordRecoveryPanel } from "./PasswordRecoveryPanel";
 import type { AppNotification } from "../api/notifications";
 
 const useStyles = makeStyles({
@@ -111,16 +112,20 @@ const navItems = [
 
 export function App() {
   const styles = useStyles();
-  const [selected, setSelected] = useState("descobrir");
+  const [selected, setSelected] = useState("inicio");
   const [session, setSession] = useState<Session | null>(null);
   const [conversationMatchId, setConversationMatchId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authMode, setAuthMode] = useState<"landing" | "sign-in" | "sign-up">("landing");
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [apiIdentity, setApiIdentity] = useState<string | null>(null);
   const [apiError, setApiError] = useState("");
   const [ownPhotoPath, setOwnPhotoPath] = useState<string | null>(null);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [, setUnreadNotifications] = useState(0);
   const [notificationGroupId, setNotificationGroupId] = useState<string | null>(null);
+  const [profileSavedNotice, setProfileSavedNotice] = useState(false);
+  const [showStoryBanner, setShowStoryBanner] = useState(true);
+  const [showSupportBanner, setShowSupportBanner] = useState(true);
   const currentLabel = navItems.find((item) => item.value === selected)?.label ?? "Descobrir";
   const updateOwnPhotoPath = useCallback((photoPath: string | null) => setOwnPhotoPath(photoPath), []);
 
@@ -131,6 +136,8 @@ export function App() {
     }
 
     let active = true;
+    const recoveryType = new URLSearchParams(window.location.hash.slice(1)).get("type");
+    if (recoveryType === "recovery") setPasswordRecovery(true);
     void supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
       if (error) setApiError(`Não foi possível recuperar a sessão: ${error.message}`);
@@ -138,8 +145,10 @@ export function App() {
       setAuthLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (active) setSession(nextSession);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!active) return;
+      setSession(nextSession);
+      if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
     });
 
     return () => {
@@ -215,6 +224,17 @@ export function App() {
     return <div style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}><Spinner label="A carregar sessão…" /></div>;
   }
 
+  if (passwordRecovery && session) {
+    return (
+      <PasswordRecoveryPanel
+        onCompleted={() => {
+          window.history.replaceState({}, "", window.location.pathname);
+          setPasswordRecovery(false);
+        }}
+      />
+    );
+  }
+
   if (!session) {
     if (authMode === "landing") {
       return <LandingPage onSignIn={() => setAuthMode("sign-in")} onSignUp={() => setAuthMode("sign-up")} />;
@@ -229,13 +249,38 @@ export function App() {
     );
   }
 
+  if (selected === "inicio") {
+    return (
+      <LandingPage
+        onSignIn={() => setSelected("descobrir")}
+        onSignUp={() => setSelected("perfil")}
+        authenticated
+        onDiscover={() => setSelected("descobrir")}
+        onProfile={() => setSelected("perfil")}
+        onSignOut={() => void signOut()}
+        showStoryBanner={showStoryBanner}
+        onDismissStoryBanner={() => setShowStoryBanner(false)}
+        showSupportBanner={showSupportBanner}
+        onDismissSupportBanner={() => setShowSupportBanner(false)}
+      />
+    );
+  }
+
   return (
     <div className={`${styles.app} member-app`}>
       <header className={`${styles.topbar} member-topbar`}>
-        <div className={styles.brand}>
+        <Button
+          appearance="subtle"
+          className={`${styles.brand} member-home-link`}
+          aria-label="Casa Comigo: abrir página principal"
+          onClick={() => {
+            setSelected("inicio");
+            setProfileSavedNotice(false);
+          }}
+        >
           <div className={styles.brandMark}><Home24Regular /></div>
           <Text className={styles.brandName} size={500}>casa comigo</Text>
-        </div>
+        </Button>
         <div className={styles.topActions}>
           <Badge className="member-environment" appearance="tint" color="success">Ambiente local</Badge>
           <NotificationsBell
@@ -272,6 +317,7 @@ export function App() {
               onTabSelect={(_, data) => {
                 setConversationMatchId(null);
                 setNotificationGroupId(null);
+                setProfileSavedNotice(false);
                 setSelected(String(data.value));
               }}
               aria-label="Navegação principal"
@@ -281,17 +327,33 @@ export function App() {
                 <Tab
                   key={item.value}
                   value={item.value}
+                  className={item.value === "descobrir" ? "member-discover-tab" : undefined}
                   icon={item.value === "perfil"
                     ? <ProfileAvatar name={session.user.email ?? "Perfil"} photoPath={ownPhotoPath} size={24} />
                     : item.icon}
                 >
-                  {item.value === "matches" && unreadNotifications > 0
-                    ? `${item.label} · ${unreadNotifications > 99 ? "99+" : unreadNotifications}`
-                    : item.label}
+                  {item.label}
                 </Tab>
               ))}
             </TabList>
           </div>
+
+          {profileSavedNotice && selected === "descobrir" && (
+            <MessageBar intent="success" className="profile-saved-notice">
+              <MessageBarBody>Perfil guardado. Já pode continuar a descobrir pessoas na sua zona.</MessageBarBody>
+            </MessageBar>
+          )}
+
+          <Card className={`${styles.sideCard} member-start-card`}>
+            <div>
+              <h2 className={styles.sideTitle}>Comece por aqui</h2>
+              <p className={styles.sideText}>Pode atualizar as suas escolhas quando quiser. A localização precisa fica privada.</p>
+            </div>
+            <div className={styles.step}><span className={styles.stepDot}>1</span><Text size={300}>Conte-nos um pouco sobre si</Text></div>
+            <div className={styles.step}><span className={styles.stepDot}>2</span><Text size={300}>Escolha a zona e o raio de procura</Text></div>
+            <div className={styles.step}><span className={styles.stepDot}>3</span><Text size={300}>Descubra pessoas e casas</Text></div>
+            <Button appearance="secondary" onClick={() => setSelected("perfil")}>Completar perfil</Button>
+          </Card>
 
           {selected === "descobrir" && (
             <DiscoveryView
@@ -312,7 +374,14 @@ export function App() {
           )}
           {selected === "perfil" && (
             <>
-              <ProfileEditor session={session} onPhotoPathChange={updateOwnPhotoPath} />
+              <ProfileEditor
+                session={session}
+                onPhotoPathChange={updateOwnPhotoPath}
+                onSaved={() => {
+                  setSelected("descobrir");
+                  setProfileSavedNotice(true);
+                }}
+              />
               <BlockedProfiles session={session} />
             </>
           )}
@@ -326,13 +395,6 @@ export function App() {
         </main>
 
         <aside className="member-sidebar">
-          <Card className={styles.sideCard}>
-            <h2 className={styles.sideTitle}>Comece por aqui</h2>
-            <p className={styles.sideText}>Pode atualizar as suas escolhas quando quiser. A localização precisa fica privada.</p>
-            <div className={styles.step}><span className={styles.stepDot}>1</span><Text size={300}>Conte-nos um pouco sobre si</Text></div>
-            <div className={styles.step}><span className={styles.stepDot}>2</span><Text size={300}>Escolha a zona e o raio de procura</Text></div>
-            <div className={styles.step}><span className={styles.stepDot}>3</span><Text size={300}>Descubra pessoas e casas</Text></div>
-          </Card>
           <Card className={styles.sideCard}>
             <h2 className={styles.sideTitle}><Location24Regular /> A sua privacidade primeiro</h2>
             <p className={styles.sideText}>A localização só deve ser pedida quando escolher configurar a sua área. Pode usar uma referência manual em vez de GPS.</p>

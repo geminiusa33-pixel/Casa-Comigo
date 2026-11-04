@@ -35,9 +35,9 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
                     rent_contribution_range, lease_holder_preference, bills_preference,
                     furnished_preference, preferred_bathrooms, preferred_bedrooms,
                     home_type_preference, move_in_timing, minimum_lease_months,
-                    discovery_visible
+                    discovery_visible, porta65_status
                 )
-                values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+                values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
                 on conflict (id) do update set
                     display_name = excluded.display_name,
                     bio = excluded.bio,
@@ -57,7 +57,8 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
                     home_type_preference = excluded.home_type_preference,
                     move_in_timing = excluded.move_in_timing,
                     minimum_lease_months = excluded.minimum_lease_months,
-                    discovery_visible = excluded.discovery_visible
+                    discovery_visible = excluded.discovery_visible,
+                    porta65_status = excluded.porta65_status
                 """;
             command.Parameters.AddWithValue(profileId);
             command.Parameters.AddWithValue(request.DisplayName);
@@ -95,6 +96,7 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
                 Value = request.MinimumLeaseMonths is int leaseMonths ? (object)(short)leaseMonths : DBNull.Value
             });
             command.Parameters.AddWithValue(request.DiscoveryVisible);
+            command.Parameters.AddWithValue(request.Porta65Status);
             try
             {
                 await command.ExecuteNonQueryAsync(cancellationToken);
@@ -167,7 +169,7 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
                p.home_type_preference, p.move_in_timing, p.minimum_lease_months,
                p.discovery_visible, p.updated_at, sa.latitude, sa.longitude,
                sa.radius_km, sa.area_label, sa.location_source, sa.updated_at,
-               photo.storage_object_path
+               photo.storage_object_path, p.porta65_status
         from public.profiles p
         left join public.search_areas sa on sa.profile_id = p.id
         left join lateral (
@@ -219,7 +221,8 @@ public sealed class ProfileRepository(NpgsqlDataSource dataSource) : IProfileRep
             displayName.Length >= 2 && preferredHousemates is not null && !reader.IsDBNull(10) && hasArea,
             searchArea,
             reader.IsDBNull(27) ? null : reader.GetString(27),
-            ToDateTimeOffset(reader.GetDateTime(20)));
+            ToDateTimeOffset(reader.GetDateTime(20)),
+            reader.GetString(28));
     }
 
     private static DateTimeOffset ToDateTimeOffset(DateTime value) =>

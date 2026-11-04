@@ -23,7 +23,7 @@ type PreferenceProfile = Partial<Pick<
     | "homeTypePreference"
     | "moveInTiming"
     | "minimumLeaseMonths"
-  >> & { rentContributionRange?: string | null };
+  >> & { rentContributionRange?: string | null; porta65Status?: string | null };
 
 const genderLabels: Record<string, string> = {
   any: "Sem preferência de género",
@@ -84,6 +84,9 @@ export function ProfilePreferenceSummary({ profile, compareWith }: Props) {
   const reconsider = compareWith
     ? getReconsiderableFacts(profile, compareWith)
     : preferences;
+  if (profile.porta65Status && profile.porta65Status !== "unknown") {
+    reconsider.push(`Porta 65-Jovem: ${porta65Labels[profile.porta65Status] ?? "situação indicada"}`);
+  }
 
   return (
     <section className={`profile-compatibility-summary${compareWith ? " has-comparison" : ""}`} aria-label="Compatibilidade e preferências">
@@ -105,6 +108,13 @@ export function ProfilePreferenceSummary({ profile, compareWith }: Props) {
     </section>
   );
 }
+
+const porta65Labels: Record<string, string> = {
+  interested: "tenho interesse em candidatar-me",
+  possibly_eligible: "posso reunir condições (a confirmar)",
+  not_applicable: "não se aplica",
+  receiving: "estou a receber apoio",
+};
 
 const comparableFields = [
   ["preferredHousemates", "Lotação pretendida", (value: number | boolean | string) => `${value} pessoas no total`],

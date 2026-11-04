@@ -36,7 +36,8 @@ public sealed record HousingGroupProfileResponse(
     int? PreferredBedrooms,
     string HomeTypePreference,
     string MoveInTiming,
-    int? MinimumLeaseMonths);
+    int? MinimumLeaseMonths,
+    string? Porta65Status);
 
 /// <summary>Membro de um grupo aberto, incluindo o limite máximo mensal de renda.</summary>
 public sealed record HousingGroupMemberResponse(

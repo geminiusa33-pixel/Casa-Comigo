@@ -28,6 +28,24 @@ public static class MatchingEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesValidationProblem();
 
+        endpoints.MapGet("/discovery/profiles/reconsider", async Task<IResult> (
+                ClaimsPrincipal user,
+                IMatchingService service,
+                CancellationToken cancellationToken) =>
+            {
+                if (!TryGetProfileId(user, out var profileId))
+                    return TypedResults.Unauthorized();
+
+                var profiles = await service.GetReconsiderableAsync(profileId, cancellationToken);
+                return TypedResults.Ok(profiles);
+            })
+            .WithName("DiscoverReconsiderableProfiles")
+            .WithSummary("Devolve até cinco perfis rejeitados há mais de três dias ou de grupos concluídos")
+            .WithDescription("Aplica os mesmos requisitos de visibilidade, renda e compatibilidade geográfica da descoberta habitual. Exclui matches existentes e membros de grupos ainda abertos.")
+            .Produces<IReadOnlyList<DiscoveryProfileResponse>>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesValidationProblem();
+
         endpoints.MapPost("/profiles/{profileId:guid}/likes", async Task<IResult> (
                 Guid profileId,
                 ClaimsPrincipal user,

@@ -19,7 +19,7 @@ export type HousingGroupProfile = Pick<
   | "homeTypePreference"
   | "moveInTiming"
   | "minimumLeaseMonths"
->;
+> & { porta65Status: string | null };
 
 export type HousingGroupMember = {
   profileId: string;

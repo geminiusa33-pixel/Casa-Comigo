@@ -1,0 +1,11 @@
+@baseUrl = http://localhost:5080
+
+### Send a public contact message (requires SendGrid configuration)
+POST {{baseUrl}}/api/public/contact
+Content-Type: application/json
+
+{
+  "name": "Pessoa de teste",
+  "email": "teste@example.com",
+  "message": "Esta é uma mensagem de teste do formulário de contacto."
+}
