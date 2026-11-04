@@ -46,6 +46,12 @@ builder.Services.AddScoped<IHousingGroupService, HousingGroupService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHttpClient<IContactEmailService, SendGridContactEmailService>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IStripeCheckoutService, StripeCheckoutService>();
+builder.Services.AddScoped<IStripeWebhookEventRepository, StripeWebhookEventRepository>();
+builder.Services.AddHttpClient<IStripeDonationEmailService, SendGridStripeDonationEmailService>();
+builder.Services.AddScoped<IStripeDonationWebhookService, StripeDonationWebhookService>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHostedService<PushNotificationBackgroundService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -90,6 +96,17 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst
             }));
+    options.AddPolicy("public-donations", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(15),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }));
 });
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:5173", "http://127.0.0.1:5173"];
@@ -115,6 +132,8 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "casa-comi
 
 var api = app.MapGroup("/api").RequireAuthorization();
 app.MapGroup("/api/public").MapContactEndpoints();
+app.MapGroup("/api/public").MapDonationEndpoints();
+app.MapGroup("/api/public").MapStripeWebhookEndpoints();
 api.MapAuthEndpoints();
 api.MapProfileEndpoints();
 api.MapMatchingEndpoints();

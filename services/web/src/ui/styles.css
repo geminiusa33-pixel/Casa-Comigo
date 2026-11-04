@@ -282,6 +282,14 @@ button, input { font: inherit; }
   background: linear-gradient(150deg, #d9e3cf 0%, #c3d2bc 57%, #8da78f 100%);
 }
 
+.landing-profile-photo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
 .landing-profile-art::before,
 .landing-profile-art::after {
   position: absolute;
@@ -413,14 +421,11 @@ button, input { font: inherit; }
 .landing-mini-avatar {
   width: 46px;
   height: 46px;
-  display: grid;
+  display: block;
   flex: 0 0 auto;
-  place-items: center;
   border-radius: 50%;
-  color: #fff9ee;
-  background: linear-gradient(145deg, #c78561, #e1b990 49%, #6f8b70 50%);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 19px;
+  object-fit: cover;
+  object-position: center 38%;
 }
 
 .landing-profile-secondary > div:nth-child(2) { display: grid; gap: 5px; }

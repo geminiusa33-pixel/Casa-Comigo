@@ -129,16 +129,36 @@ O formulário público de contacto envia mensagens pela API .NET, usando a API v
 
 Nunca coloques a API key em `services/web/.env.local`, em `VITE_*`, no Git ou no browser. A chave não é necessária para recuperar palavras-passe: esse fluxo usa o SMTP personalizado nas definições do Supabase, conforme a secção anterior.
 
-### Donativos opcionais com Stripe Payment Links
+### Donativos opcionais com Stripe Checkout
 
-Para este MVP foi escolhida a opção sem código de pagamento no backend:
+Os botões de apoio criam sessões de Stripe Checkout na API, para valores fixos de 3 €, 5 € ou 10 €. A chave secreta Stripe é usada exclusivamente no backend; nunca a coloques no frontend, em variáveis `VITE_*`, no Git ou no chat.
 
-1. Cria/ativa a conta Stripe e completa os dados de negócio solicitados no Dashboard.
-2. Em **Payment Links**, cria três links de donativo pontual em EUR: 3 €, 5 € e 10 €. Ativa MB WAY e Multibanco nas definições de métodos de pagamento e confirma que o Dashboard permite esses métodos para cada link/conta.
-3. Copia os URLs públicos para `VITE_STRIPE_COFFEE_3_URL`, `VITE_STRIPE_COFFEE_5_URL` e `VITE_STRIPE_COFFEE_10_URL` nas variáveis do frontend local ou do projeto Vercel e volta a publicar o frontend. Estes URLs são concebidos para partilha; não são chaves secretas. A aplicação não necessita de `STRIPE_SECRET_KEY`.
-4. Testa primeiro com os métodos de teste oferecidos pela Stripe. Só ativa pagamentos reais quando a conta estiver verificada e os termos, contacto, privacidade e informação fiscal do projeto estiverem revistos.
+Para testar localmente, usa primeiro uma chave de teste (`sk_test_...`) e guarda-a nos User Secrets do projeto da API:
 
-MB WAY normalmente confirma o pagamento de forma imediata; Multibanco é um método com confirmação atrasada — podes pagar o talão mais tarde. Não interpretes a página de retorno do Stripe como prova de que um pagamento Multibanco foi liquidado. A elegibilidade e disponibilidade dos métodos dependem da conta e das definições Stripe. Consulta a [documentação de Payment Links](https://docs.stripe.com/payment-links), [MB WAY](https://docs.stripe.com/payments/mb-way) e [Multibanco](https://docs.stripe.com/payments/multibanco).
+```powershell
+dotnet user-secrets set "Stripe:SecretKey" "sk_test_A_TUA_CHAVE_DE_TESTE" --project services\api\src\CasaComigo.Api
+dotnet user-secrets set "Stripe:WebhookSecret" "whsec_SEGREDO_MOSTRADO_PELO_STRIPE_CLI" --project services\api\src\CasaComigo.Api
+dotnet user-secrets set "Payments:FrontendBaseUrl" "http://localhost:5173" --project services\api\src\CasaComigo.Api
+dotnet run --project services\api\src\CasaComigo.Api
+```
+
+Aplica a migration que regista os eventos processados, sem apagar a base de dados local:
+
+```powershell
+npx supabase migration up --local
+```
+
+Noutro terminal, inicia o encaminhamento local do Stripe CLI:
+
+```powershell
+stripe listen --forward-to localhost:5080/api/public/stripe/webhook
+```
+
+O comando mostra um segredo de webhook `whsec_...`; guarda-o com o comando acima e reinicia a API. A notificação é enviada para `Contact__ToEmail`, o mesmo destinatário configurado para o formulário de contacto. O SendGrid (`SendGrid__ApiKey`, `SendGrid__FromEmail`) também tem de estar configurado. A API verifica a assinatura, envia apenas após confirmação do pagamento e regista os IDs de evento para evitar emails repetidos.
+
+Substitui os exemplos pelas tuas chaves apenas no teu terminal; não as partilhes. Para produção, configura `Stripe__SecretKey`, `Stripe__WebhookSecret`, `Payments__FrontendBaseUrl` e as variáveis do SendGrid nos segredos do host da API. No Stripe Dashboard, regista `https://<domínio-da-api>/api/public/stripe/webhook` para os eventos `checkout.session.completed` e `checkout.session.async_payment_succeeded`; guarda o `whsec_...` desse endpoint no host. Usa a chave live (`sk_live_...`) e o domínio HTTPS do frontend. Não é necessário configurar qualquer chave Stripe no Vercel. Ativa e testa os métodos de pagamento permitidos pela tua conta Stripe; MB WAY e Multibanco dependem da elegibilidade da conta e das configurações Stripe.
+
+O regresso à aplicação depois do Checkout não prova que um pagamento atrasado foi liquidado. Em particular, pagamentos Multibanco só ficam confirmados após o pagamento da referência. Consulta a documentação de [Checkout](https://docs.stripe.com/checkout/quickstart), [MB WAY](https://docs.stripe.com/payments/mb-way) e [Multibanco](https://docs.stripe.com/payments/multibanco).
 
 ### Porta 65-Jovem e informação de arrendamento
 
@@ -147,7 +167,7 @@ No perfil podes indicar o teu interesse/situação relativamente ao Porta 65-Jov
 ### Preparação para publicar
 
 - Aloja a API .NET e configura as variáveis server-side de `.env.api.production.example` no gestor de segredos do host. Não carregues esse ficheiro para o host como se fosse uma fonte de segredos.
-- No Vercel, configura `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e, quando existirem, os três URLs de Stripe Payment Links. Variáveis `VITE_*` são públicas e ficam incluídas no bundle do browser.
+- No Vercel, configura `VITE_API_BASE_URL`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`. Variáveis `VITE_*` são públicas e ficam incluídas no bundle do browser.
 - Configura o domínio HTTPS no SMTP e nos URLs de redirecionamento do Supabase Auth; a API deve aceitar apenas a origem real do frontend em `Cors__AllowedOrigins__0`.
 - Aplica a migration Porta 65 apenas ao projeto Supabase correto, depois de confirmares o destino e a cópia de segurança. Não uses `db reset` em produção.
 - Antes do lançamento público, finaliza e revê os termos e a política de privacidade, incluindo identidade do responsável pelo serviço, retenção de dados, exercício de direitos, moderação, segurança, reclamações e obrigações fiscais dos donativos. Faz também testes com contas distintas e revê RLS, autenticação, backups e logs.

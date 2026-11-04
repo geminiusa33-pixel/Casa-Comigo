@@ -65,6 +65,16 @@ export function LandingPage({
   const [contactBusy, setContactBusy] = useState(false);
   const [contactNotice, setContactNotice] = useState("");
   const [contactError, setContactError] = useState("");
+  const [donationBusy, setDonationBusy] = useState<number | null>(null);
+  const [donationError, setDonationError] = useState("");
+  const [donationNotice, setDonationNotice] = useState(() => {
+    const status = new URLSearchParams(window.location.search).get("apoio");
+    if (status === "concluido")
+      return "O Stripe recebeu o teu pedido de apoio. Se escolheste Multibanco, o pagamento só fica confirmado depois de pagares a referência.";
+    if (status === "cancelado")
+      return "O pagamento foi cancelado. Não foi feito qualquer donativo.";
+    return "";
+  });
 
   async function sendContactMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,11 +97,33 @@ export function LandingPage({
     }
   }
 
-  const donationLinks = [
-    { amount: "3 €", url: import.meta.env.VITE_STRIPE_COFFEE_3_URL },
-    { amount: "5 €", url: import.meta.env.VITE_STRIPE_COFFEE_5_URL },
-    { amount: "10 €", url: import.meta.env.VITE_STRIPE_COFFEE_10_URL },
-  ];
+  async function startDonation(amountEuro: number) {
+    setDonationBusy(amountEuro);
+    setDonationError("");
+    setDonationNotice("");
+    try {
+      const { url } = await apiRequest<{ url: string }>("/api/public/donations/checkout", undefined, {
+        method: "POST",
+        body: JSON.stringify({ amountEuro }),
+      });
+      const checkoutUrl = new URL(url);
+      if (checkoutUrl.protocol !== "https:" || checkoutUrl.hostname !== "checkout.stripe.com")
+        throw new Error("O Stripe devolveu um endereço de pagamento inválido.");
+      window.location.assign(checkoutUrl.href);
+    } catch (caught) {
+      setDonationError(caught instanceof Error ? caught.message : "Não foi possível iniciar o pagamento.");
+      setDonationBusy(null);
+    }
+  }
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("apoio")) return;
+    url.searchParams.delete("apoio");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+
+  const donationAmounts = [3, 5, 10];
   const storyOpen = showStoryBanner ?? localStoryOpen;
   const supportOpen = showSupportBanner ?? localSupportOpen;
 
@@ -207,12 +239,19 @@ export function LandingPage({
                 </p>
               </div>
               <div className="landing-donation-options" aria-label="Opções de donativo">
-                {donationLinks.map(({ amount, url }) => url
-                  ? <a className="landing-donation-link" key={amount} href={url} target="_blank" rel="noreferrer">Pagar um café · {amount}</a>
-                  : <Button key={amount} appearance="secondary" disabled>Pagar um café · {amount}</Button>)}
-                {!donationLinks.some(({ url }) => url) && (
-                  <p>Os pagamentos ainda não estão configurados. Consulta o README para criar os links seguros no Stripe.</p>
-                )}
+                {donationAmounts.map((amountEuro) => (
+                  <Button
+                    className="landing-donation-link"
+                    key={amountEuro}
+                    appearance="secondary"
+                    disabled={donationBusy !== null}
+                    onClick={() => void startDonation(amountEuro)}
+                  >
+                    {donationBusy === amountEuro ? "A preparar pagamento…" : `Pagar um café · ${amountEuro} €`}
+                  </Button>
+                ))}
+                {donationError && <MessageBar intent="error"><MessageBarBody>{donationError}</MessageBarBody></MessageBar>}
+                {donationNotice && <MessageBar intent="success"><MessageBarBody>{donationNotice}</MessageBarBody></MessageBar>}
               </div>
               <Button
                 className="landing-banner-dismiss"
@@ -253,10 +292,11 @@ export function LandingPage({
             <div className="landing-visual-note"><span className="landing-live-dot" /> Uma casa começa por aqui</div>
             <article className="landing-profile-card landing-profile-main">
               <div className="landing-profile-art landing-profile-art-one">
-                <span className="landing-art-sun" />
-                <span className="landing-art-window" />
-                <span className="landing-art-plant" aria-hidden="true" />
-                <span className="landing-art-person">M</span>
+                <img
+                  className="landing-profile-photo"
+                  src="/images/sample-woman.jpg"
+                  alt="Fotografia ilustrativa do perfil de Mariana"
+                />
               </div>
               <div className="landing-profile-content">
                 <div className="landing-profile-heading"><strong>Mariana, 27</strong><span>Perfil exemplo</span></div>
@@ -267,7 +307,11 @@ export function LandingPage({
               <div className="landing-card-heart"><Heart24Regular /></div>
             </article>
             <article className="landing-profile-card landing-profile-secondary">
-              <div className="landing-mini-avatar">R</div>
+              <img
+                className="landing-mini-avatar"
+                src="/images/sample-man.jpg"
+                alt="Fotografia ilustrativa do perfil de Rui"
+              />
               <div><strong>Rui, 30</strong><span>Também procura em Lisboa</span></div>
               <span className="landing-match-icon"><Heart24Regular /></span>
             </article>
