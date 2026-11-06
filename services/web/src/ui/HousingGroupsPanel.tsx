@@ -238,7 +238,7 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
   if (loading) return <Spinner label="A carregar grupos de coabitação…" />;
 
   return (
-    <section style={{ display: "grid", gap: 16 }}>
+    <section className="housing-groups-panel" style={{ display: "grid", gap: 16 }}>
       <Dialog
         open={profileToView !== null}
         onOpenChange={(_, data) => {
@@ -280,7 +280,7 @@ export function HousingGroupsPanel({ session, initialMatchId, initialGroupId }: 
         </Card>
       )}
       {groups.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 16 }}>
+        <div className="housing-groups-layout" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 16 }}>
           <div style={{ display: "grid", alignContent: "start", gap: 12 }}>
             {groups.map((group) => {
               const confirmed = group.members.filter((member) => member.confirmedCompletion).length;

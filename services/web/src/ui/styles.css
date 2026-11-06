@@ -1614,3 +1614,173 @@ button, input { font: inherit; }
     padding: 14px;
   }
 }
+
+@media (max-width: 760px) {
+  .member-main,
+  .member-main > *,
+  .member-main section,
+  .matches-view,
+  .housing-groups-panel,
+  .matches-layout,
+  .housing-groups-layout {
+    min-width: 0;
+  }
+
+  .member-sidebar { min-width: 0; }
+  .member-topbar { gap: 8px; padding-inline: 16px; }
+  .member-topbar .topActions { min-width: 0; gap: 6px; }
+  .member-topbar .member-account { min-width: 0; }
+  .member-topbar .member-home-link { flex: 0 1 auto; }
+  .member-topbar .member-signout { min-height: 40px; }
+  .member-tabs-wrap { min-width: 0; }
+  .member-tabs-wrap [role="tablist"] { overscroll-behavior-x: contain; }
+
+  .landing-hero,
+  .landing-header,
+  .landing-footer,
+  .landing-how,
+  .landing-privacy,
+  .landing-banners,
+  .landing-story,
+  .landing-support,
+  .landing-rental-info,
+  .landing-terms,
+  .landing-contact {
+    min-width: 0;
+  }
+
+  .landing-contact { grid-template-columns: minmax(0, 1fr); }
+  .landing-contact form,
+  .landing-contact form label { min-width: 0; }
+
+  .auth-page { grid-template-columns: minmax(0, 1fr); }
+  .auth-story { min-height: auto; }
+  .auth-story-copy { padding: 38px 0 28px; }
+  .auth-form-area { min-width: 0; padding: 26px 20px 38px; }
+  .auth-card,
+  .auth-card .fui-Card,
+  .password-recovery-card { min-width: 0; }
+
+  .discovery-toolbar,
+  .discovery-housing-group-heading,
+  .housing-group-card-heading {
+    min-width: 0;
+  }
+
+  .discovery-grid,
+  .discovery-housing-groups-grid,
+  .matches-layout,
+  .housing-groups-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .discovery-profile,
+  .discovery-profile > .fui-Card,
+  .discovery-housing-group-card,
+  .matches-layout > *,
+  .housing-groups-layout > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .discovery-profile-cover { height: clamp(210px, 62vw, 270px); min-height: clamp(210px, 62vw, 270px); }
+  .discovery-grid .profile-compatibility-summary { height: auto; min-height: 210px; max-height: 300px; }
+  .discovery-housing-group-heading { flex-wrap: wrap; }
+  .discovery-group-member-dialog { width: min(100%, 560px); max-width: calc(100vw - 24px); }
+  .fui-DialogSurface { width: calc(100vw - 24px); max-width: 560px; }
+
+  .matches-view > div:first-of-type p,
+  .housing-groups-panel > div:nth-of-type(2) p {
+    line-height: 1.6;
+  }
+
+  .housing-group-card-heading { align-items: flex-start; }
+  .housing-group-card-title { flex: 1 1 180px; }
+  .housing-group-card-heading > .fui-Button { flex: 0 0 auto; }
+  .housing-group-rename-form { align-items: stretch; }
+  .housing-group-rename-form .fui-Input { flex-basis: 100%; }
+  .housing-group-rename-form .fui-Button { flex: 1 1 auto; }
+  .group-leave-confirm > div { align-items: stretch; }
+  .group-leave-confirm > div .fui-Button { flex: 1 1 150px; }
+
+  .profile-editor,
+  .profile-editor-card,
+  .profile-editor-card > .fui-Card { min-width: 0; }
+  .profile-photo-control { min-width: 0; }
+  .profile-photo-control > div { min-width: 0; }
+  .profile-section-heading > div:last-child { min-width: 0; }
+  .profile-location-button { max-width: 100%; white-space: normal; }
+  .profile-map-caption,
+  .profile-map-privacy { overflow-wrap: anywhere; }
+  .search-area-map-prompt { max-width: calc(100% - 24px); white-space: normal; text-align: center; }
+  .profile-form-footer { z-index: 3; }
+  .profile-discovery-toggle { min-width: 0; }
+
+  .member-sidebar .fui-Card,
+  .member-main .fui-Card { min-width: 0; }
+  .member-main .fui-Button,
+  .member-sidebar .fui-Button { max-width: 100%; }
+
+  .notifications-popover {
+    right: 12px;
+    width: min(390px, calc(100vw - 24px));
+    max-height: min(72dvh, 590px);
+  }
+
+  .profile-preference-summary,
+  .rent-contribution-summary,
+  .match-cancel-confirm,
+  .group-leave-confirm {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .member-app input,
+  .member-app textarea,
+  .member-app select {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .profile-field .fui-Input input { font-size: 16px; }
+}
+
+@media (max-width: 420px) {
+  .member-topbar { padding-inline: 12px; }
+  .member-topbar .brandName { display: none; }
+  .member-topbar .topActions { gap: 4px; }
+  .member-topbar .member-home-link .brandMark { width: 34px; height: 34px; }
+  .member-topbar .member-signout { padding-inline: 8px; }
+  .member-layout { width: calc(100% - 28px); }
+  .member-heading h1 { font-size: clamp(32px, 10vw, 39px); }
+  .discovery-toolbar-actions { gap: 6px; }
+  .discovery-reconsider { flex: 1 1 auto; }
+  .discovery-match-dialog { padding: 22px 18px; border-radius: 17px; }
+  .profile-form-section { padding-inline: 13px; }
+  .profile-discovery-toggle { margin-inline: 12px; }
+  .profile-form-footer { padding-inline: 13px; }
+  .auth-card .fui-Card,
+  .password-recovery-card { padding: 23px 18px; }
+  .landing-header,
+  .landing-footer,
+  .landing-hero,
+  .landing-how,
+  .landing-privacy,
+  .landing-banners,
+  .landing-story,
+  .landing-support,
+  .landing-rental-info,
+  .landing-terms,
+  .landing-contact {
+    width: calc(100% - 28px);
+  }
+}
+
+@media (max-width: 360px) {
+  .member-topbar .member-signout { min-width: 0; padding-inline: 6px; font-size: 11px; }
+  .member-topbar .notifications-bell { min-width: 38px; }
+  .member-topbar .member-home-link .brandMark { width: 31px; height: 31px; }
+  .member-topbar { padding-inline: 9px; }
+  .member-layout { width: calc(100% - 24px); }
+  .landing-header-actions .fui-Button { padding-inline: 5px; font-size: 10px; }
+}

@@ -137,7 +137,7 @@ export function MatchesView({ session, initialMatchId, initialGroupId }: Props) 
 
   return (
     <>
-    <section style={{ display: "grid", gap: 16 }}>
+    <section className="matches-view" style={{ display: "grid", gap: 16 }}>
       <div>
         <h2 style={{ marginBottom: 4 }}>Os teus matches</h2>
         <p style={{ marginTop: 0 }}>Um match só é criado depois de ambos gostarem um do outro. As conversas atualizam automaticamente.</p>
@@ -148,7 +148,7 @@ export function MatchesView({ session, initialMatchId, initialGroupId }: Props) 
         <Card style={{ padding: 24 }}><Text>Ainda não tens matches. Continua a conhecer pessoas na descoberta.</Text></Card>
       )}
       {matches.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 16 }}>
+        <div className="matches-layout" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 16 }}>
           <div style={{ display: "grid", alignContent: "start", gap: 10 }}>
             {matches.map((match) => (
               <Card key={match.id} style={{ padding: 14, minWidth: 0 }}>
