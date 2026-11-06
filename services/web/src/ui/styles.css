@@ -1448,9 +1448,30 @@ button, input { font: inherit; }
   .member-heading { margin-bottom: 21px; }
   .member-heading h1 { font-size: clamp(36px, 9.5vw, 45px); letter-spacing: -1.3px; }
   .member-heading p { font-size: 12px; }
-  .member-tabs-wrap { margin-bottom: 23px; padding: 4px; }
-  .member-tabs-wrap [role="tablist"] { overflow-x: auto; scrollbar-width: none; }
-  .member-tabs-wrap [role="tablist"]::-webkit-scrollbar { display: none; }
+  .member-tabs-wrap {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-bottom: 23px;
+    padding: 4px;
+    box-sizing: border-box;
+  }
+  .member-tabs-wrap [role="tablist"] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: #b6c4b2 transparent;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+  .member-tabs-wrap [role="tablist"]::-webkit-scrollbar { height: 3px; }
+  .member-tabs-wrap [role="tablist"]::-webkit-scrollbar-thumb { border-radius: 999px; background: #b6c4b2; }
+  .member-tabs-wrap [role="tab"] { flex: 0 0 auto; scroll-snap-align: start; }
   .member-tabs-wrap [role="tab"] { min-height: 39px; padding: 0 11px; font-size: 10px; }
   .member-tabs-wrap [role="tab"] svg { display: none; }
   .member-tabs-wrap [role="tab"].member-discover-tab svg { display: block; }
