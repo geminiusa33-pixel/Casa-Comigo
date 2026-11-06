@@ -15,9 +15,9 @@ public sealed class MatchingService(
     {
         var profile = await profileService.GetAsync(profileId, cancellationToken);
         if (profile is null)
-            throw new ProfileValidationException("Completa o teu perfil antes de descobrir pessoas.");
+            return Array.Empty<DiscoveryProfileResponse>();
         if (!profile.ProfileComplete || !profile.DiscoveryVisible)
-            throw new ProfileValidationException("Completa o teu perfil, guarda a zona e ativa a descoberta nas definições.");
+            return Array.Empty<DiscoveryProfileResponse>();
 
         return await repository.GetDiscoverableAsync(profileId, cancellationToken);
     }
@@ -29,9 +29,9 @@ public sealed class MatchingService(
     {
         var profile = await profileService.GetAsync(profileId, cancellationToken);
         if (profile is null)
-            throw new ProfileValidationException("Completa o teu perfil antes de descobrir pessoas.");
+            return Array.Empty<DiscoveryProfileResponse>();
         if (!profile.ProfileComplete || !profile.DiscoveryVisible)
-            throw new ProfileValidationException("Completa o teu perfil, guarda a zona e ativa a descoberta nas definições.");
+            return Array.Empty<DiscoveryProfileResponse>();
 
         return await repository.GetReconsiderableAsync(profileId, cancellationToken);
     }

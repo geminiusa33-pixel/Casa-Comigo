@@ -365,13 +365,28 @@ export function DiscoveryView({ session, onEditProfile, onOpenConversation }: Pr
               <span className="discovery-empty-home"><PeopleCommunity24Regular /></span>
             </div>
             <div className="discovery-empty-copy">
-              <Badge appearance="tint" color="success">A tua procura começa aqui</Badge>
-              <h3>Ainda não há perfis para mostrar</h3>
-              <p>
-                Completa o perfil, escolhe uma zona de procura e ativa a descoberta.
-                Mostraremos pessoas quando as áreas forem mutuamente compatíveis.
-              </p>
-              <Button appearance="primary" onClick={onEditProfile}>Rever o meu perfil</Button>
+              {ownProfile?.profileComplete && ownProfile.discoveryVisible && ownProfile.searchArea ? (
+                <>
+                  <Badge appearance="tint" color="success">A tua procura começa aqui</Badge>
+                  <h3>Ainda não há perfis para mostrar</h3>
+                  <p>
+                    Mostraremos pessoas quando houver perfis com áreas de procura mutuamente compatíveis.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Badge appearance="tint" color="success">Prepara a tua descoberta</Badge>
+                  <h3>Completa o teu perfil para descobrir pessoas</h3>
+                  <p>
+                    Completa e guarda o perfil, define a zona de procura e ativa a descoberta nas definições.
+                  </p>
+                </>
+              )}
+              <Button appearance="primary" onClick={onEditProfile}>
+                {ownProfile?.profileComplete && ownProfile.discoveryVisible && ownProfile.searchArea
+                  ? "Rever o meu perfil"
+                  : "Completar perfil"}
+              </Button>
             </div>
           </Card>
           <div className="discovery-empty-footnote">

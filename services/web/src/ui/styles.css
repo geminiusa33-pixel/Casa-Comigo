@@ -1457,12 +1457,30 @@ button, input { font: inherit; }
   .member-tabs-wrap [role="tab"].member-discover-tab { min-width: max-content; }
   .discovery-view { gap: 14px; }
   .discovery-toolbar { align-items: flex-start; flex-wrap: wrap; }
-  .discovery-toolbar-actions { width: 100%; justify-content: flex-start; }
+  .discovery-toolbar > div:first-child { min-width: 0; width: 100%; }
+  .discovery-toolbar-actions {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    justify-content: flex-start;
+  }
+  .discovery-toolbar-actions > .fui-Button {
+    width: fit-content !important;
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 1 auto !important;
+    align-self: flex-start;
+    white-space: normal;
+  }
   .discovery-toolbar h2 { font-size: 24px; }
   .discovery-toolbar p { max-width: 270px; font-size: 11px; }
   .discovery-refresh { min-width: 0; width: 39px; height: 39px; overflow: hidden; padding: 0; font-size: 0; }
   .discovery-refresh .fui-Button__icon { margin: 0; }
   .discovery-reconsider { min-height: 39px; padding: 0 10px; font-size: 10px; }
+  .discovery-reconsider.is-active { color: #fff; border-color: #315d48; background: #315d48; }
   .discovery-assurance { align-items: flex-start; padding: 10px 11px; font-size: 10px; }
   .discovery-grid { grid-template-columns: 1fr; gap: 14px; }
   .discovery-profile > .fui-Card:hover { transform: none; }
@@ -1475,6 +1493,18 @@ button, input { font: inherit; }
   .discovery-empty-copy { padding: 5px 22px 24px; text-align: center; }
   .discovery-empty-copy h3 { font-size: 23px; }
   .discovery-empty-copy p { margin-inline: auto; }
+  .discovery-empty-copy > .fui-Button {
+    width: fit-content !important;
+    max-width: 100%;
+    justify-self: center;
+    white-space: normal;
+  }
+  .member-profile-prompt .fui-Button {
+    width: fit-content !important;
+    max-width: 100%;
+    justify-self: start;
+    white-space: normal;
+  }
   .member-sidebar { grid-template-columns: 1fr; }
   .member-sidebar .fui-MessageBar,
   .member-sidebar > p { grid-column: auto; }
@@ -1627,6 +1657,12 @@ button, input { font: inherit; }
   }
 
   .member-sidebar { min-width: 0; }
+  .member-sidebar > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
   .member-topbar { gap: 8px; padding-inline: 16px; }
   .member-topbar .topActions { min-width: 0; gap: 6px; }
   .member-topbar .member-account { min-width: 0; }
@@ -1800,8 +1836,8 @@ button, input { font: inherit; }
   .member-topbar .member-signout { padding-inline: 8px; }
   .member-layout { width: calc(100% - 28px); }
   .member-heading h1 { font-size: clamp(32px, 10vw, 39px); }
-  .discovery-toolbar-actions { flex-wrap: wrap; gap: 6px; }
-  .discovery-reconsider { min-height: 42px; flex: 1 1 190px; white-space: normal; }
+  .discovery-toolbar-actions { gap: 6px; }
+  .discovery-reconsider { min-height: 42px; flex: 0 1 auto; white-space: normal; }
   .discovery-match-dialog { padding: 22px 18px; border-radius: 17px; }
   .discovery-housing-group-card { padding: 13px; }
   .discovery-housing-group-member { align-items: center; }

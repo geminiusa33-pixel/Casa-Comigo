@@ -23,7 +23,7 @@ public static class MatchingEndpoints
             })
             .WithName("DiscoverProfiles")
             .WithSummary("Descobre perfis em zonas de procura mutuamente compatíveis")
-            .WithDescription("O centro de cada área tem de ficar dentro do raio de procura da outra pessoa. Preferências de convivência ou habitação não restringem a descoberta. Nunca devolve coordenadas precisas.")
+            .WithDescription("O centro de cada área tem de ficar dentro do raio de procura da outra pessoa. Preferências de convivência ou habitação não restringem a descoberta. Nunca devolve coordenadas precisas. Devolve uma lista vazia se o perfil autenticado não estiver completo ou tiver a descoberta desativada.")
             .Produces<IReadOnlyList<DiscoveryProfileResponse>>()
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesValidationProblem();
@@ -41,7 +41,7 @@ public static class MatchingEndpoints
             })
             .WithName("DiscoverReconsiderableProfiles")
             .WithSummary("Devolve até cinco perfis rejeitados há mais de três dias ou de grupos concluídos")
-            .WithDescription("Aplica os mesmos requisitos de visibilidade, renda e compatibilidade geográfica da descoberta habitual. Exclui matches existentes e membros de grupos ainda abertos.")
+            .WithDescription("Aplica os mesmos requisitos de visibilidade, renda e compatibilidade geográfica da descoberta habitual. Exclui matches existentes e membros de grupos ainda abertos. Devolve uma lista vazia se o perfil autenticado não estiver completo ou tiver a descoberta desativada.")
             .Produces<IReadOnlyList<DiscoveryProfileResponse>>()
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesValidationProblem();
