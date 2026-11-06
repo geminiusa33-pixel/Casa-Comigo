@@ -574,6 +574,9 @@ button, input { font: inherit; }
   font-size: clamp(14px, 1.8vw, 17px);
   line-height: 1.8;
 }
+.landing-story-dialog p:not(.landing-story-signature) + p:not(.landing-story-signature) {
+  margin-top: 16px;
+}
 .landing-story-dialog .landing-story-signature {
   margin-top: 18px;
   color: #315d48;
@@ -695,6 +698,10 @@ button, input { font: inherit; }
 .landing-donation-link { min-height: 40px; justify-content: center; border: 1px solid #d5dfd1; border-radius: 9px; color: #284835; background: #f8f8f2; font-size: 12px; font-weight: 650; text-decoration: none; }
 .landing-donation-link { display: inline-flex; align-items: center; padding: 0 15px; }
 .landing-donation-options .fui-Button:disabled { opacity: .78; }
+.landing-custom-donation { display: grid; gap: 7px; color: #f7f7f1; font-size: 12px; font-weight: 600; }
+.landing-custom-donation-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+.landing-custom-donation-controls .fui-Input { min-width: 0; border-radius: 9px; color: #284835; background: #f8f8f2; }
+.landing-custom-donation > span { font-size: 11px; font-weight: 400; opacity: .78; }
 
 .landing-rental-info,
 .landing-terms { margin-top: 90px; }

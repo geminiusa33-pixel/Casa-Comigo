@@ -12,6 +12,7 @@ import {
   ShieldCheckmark24Regular,
 } from "@fluentui/react-icons";
 import { apiRequest } from "../api/http";
+import { parseDonationAmountCents } from "./donationAmount";
 
 type Props = {
   onSignIn: () => void;
@@ -67,6 +68,7 @@ export function LandingPage({
   const [contactError, setContactError] = useState("");
   const [donationBusy, setDonationBusy] = useState<number | null>(null);
   const [donationError, setDonationError] = useState("");
+  const [customDonationAmount, setCustomDonationAmount] = useState("");
   const [donationNotice, setDonationNotice] = useState(() => {
     const status = new URLSearchParams(window.location.search).get("apoio");
     if (status === "concluido")
@@ -97,14 +99,14 @@ export function LandingPage({
     }
   }
 
-  async function startDonation(amountEuro: number) {
-    setDonationBusy(amountEuro);
+  async function startDonation(amountCents: number) {
+    setDonationBusy(amountCents);
     setDonationError("");
     setDonationNotice("");
     try {
       const { url } = await apiRequest<{ url: string }>("/api/public/donations/checkout", undefined, {
         method: "POST",
-        body: JSON.stringify({ amountEuro }),
+        body: JSON.stringify({ amountEuro: amountCents / 100 }),
       });
       const checkoutUrl = new URL(url);
       if (checkoutUrl.protocol !== "https:" || checkoutUrl.hostname !== "checkout.stripe.com")
@@ -123,7 +125,18 @@ export function LandingPage({
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }, []);
 
-  const donationAmounts = [3, 5, 10];
+  const donationAmounts = [100, 200, 300];
+  function startCustomDonation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const amountCents = parseDonationAmountCents(customDonationAmount);
+    if (amountCents === null) {
+      setDonationError("Introdu um valor entre 0,50 € e 20,00 €, com até duas casas decimais.");
+      return;
+    }
+
+    void startDonation(amountCents);
+  }
+
   const storyOpen = showStoryBanner ?? localStoryOpen;
   const supportOpen = showSupportBanner ?? localSupportOpen;
 
@@ -180,13 +193,17 @@ export function LandingPage({
             <span className="landing-eyebrow">Porque nasceu o projeto Divide Casa Comigo</span>
             <h2 id="landing-story-title">Uma ideia que começou numa experiência pessoal.</h2>
             <p id="landing-story-description">
-              Sou pai e mudei-me do Porto para Lisboa para estar perto da minha filha. Gostava de poder
-              partilhar com ela uma residência alternada, mas, por enquanto, não consigo suportar sozinho
-              o custo de uma casa que permita essa solução. Esta dificuldade limita o tempo que podemos
-              passar juntos — uma realidade delicada, vivida por muitas famílias, sem que isso tenha de ser
-              culpa de alguém. Neste momento, a possibilidade de residência alternada está em pausa,
-              a aguardar apreciação do tribunal e até conseguir arrendar uma casa que permita essa solução.
-              Criei esta plataforma na esperança de tornar mais fácil encontrar pessoas compatíveis para
+              Sou pai separado e mudei-me do Porto para Lisboa para estar perto da minha filha. Gostava de poder
+              partilhar com ela uma residência alternada, mas, por enquanto, tendo em conta a crise de habitação,
+              não consigo suportar sozinho o custo de uma casa que permita essa solução.
+            </p>
+            <p>
+              Esta dificuldade limita o tempo que podemos
+              passar juntos, uma realidade delicada, vivida por muitas famílias. Neste momento, a possibilidade de residência alternada está em pausa,
+              a aguardar apreciação do tribunal e até conseguir arrendar uma casa que permita essa solução, algo que parece impossível.
+            </p>
+            <p>
+              Alguns estarão na mesma situação ou semelhante e por isso criei esta plataforma na esperança de tornar mais fácil encontrar pessoas compatíveis para
               partilhar casa e, assim, abrir novas possibilidades para quem precisa de conciliar habitação
               acessível e vida familiar.
             </p>
@@ -239,17 +256,43 @@ export function LandingPage({
                 </p>
               </div>
               <div className="landing-donation-options" aria-label="Opções de donativo">
-                {donationAmounts.map((amountEuro) => (
+                {donationAmounts.map((amountCents) => (
                   <Button
                     className="landing-donation-link"
-                    key={amountEuro}
+                    key={amountCents}
                     appearance="secondary"
                     disabled={donationBusy !== null}
-                    onClick={() => void startDonation(amountEuro)}
+                    onClick={() => void startDonation(amountCents)}
                   >
-                    {donationBusy === amountEuro ? "A preparar pagamento…" : `Pagar um café · ${amountEuro} €`}
+                    {donationBusy === amountCents
+                      ? "A preparar pagamento…"
+                      : `Pagar um café · ${amountCents / 100} €`}
                   </Button>
                 ))}
+                <form className="landing-custom-donation" onSubmit={startCustomDonation}>
+                  <label htmlFor="custom-donation-amount">Ou escolhe outro valor</label>
+                  <div className="landing-custom-donation-controls">
+                    <Input
+                      id="custom-donation-amount"
+                      type="text"
+                      inputMode="decimal"
+                      value={customDonationAmount}
+                      placeholder="0,50 € – 20,00 €"
+                      aria-describedby="custom-donation-hint"
+                      disabled={donationBusy !== null}
+                      onChange={(_, data) => setCustomDonationAmount(data.value)}
+                    />
+                    <Button
+                      type="submit"
+                      appearance="secondary"
+                      className="landing-donation-link"
+                      disabled={donationBusy !== null}
+                    >
+                      Apoiar
+                    </Button>
+                  </div>
+                  <span id="custom-donation-hint">Mínimo 0,50 € · Máximo 20,00 €</span>
+                </form>
                 {donationError && <MessageBar intent="error"><MessageBarBody>{donationError}</MessageBarBody></MessageBar>}
                 {donationNotice && <MessageBar intent="success"><MessageBarBody>{donationNotice}</MessageBarBody></MessageBar>}
               </div>

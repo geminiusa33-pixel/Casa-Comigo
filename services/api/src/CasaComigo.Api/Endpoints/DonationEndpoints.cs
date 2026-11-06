@@ -5,6 +5,9 @@ namespace CasaComigo.Api.Endpoints;
 
 public static class DonationEndpoints
 {
+    private const decimal MinimumDonationEuro = 0.50m;
+    private const decimal MaximumDonationEuro = 20m;
+
     public static IEndpointRouteBuilder MapDonationEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/donations/checkout", async Task<IResult> (
@@ -13,11 +16,14 @@ public static class DonationEndpoints
                 ILogger<Program> logger,
                 CancellationToken cancellationToken) =>
             {
-                if (request.AmountEuro is not (3 or 5 or 10))
+                var amountCents = request.AmountEuro * 100m;
+                if (request.AmountEuro < MinimumDonationEuro
+                    || request.AmountEuro > MaximumDonationEuro
+                    || amountCents != decimal.Truncate(amountCents))
                 {
                     return TypedResults.ValidationProblem(new Dictionary<string, string[]>
                     {
-                        [nameof(request.AmountEuro)] = ["Escolhe um dos valores de apoio disponíveis."]
+                        [nameof(request.AmountEuro)] = ["Escolhe um valor entre 0,50 € e 20 €, com no máximo duas casas decimais."]
                     });
                 }
 
@@ -35,7 +41,7 @@ public static class DonationEndpoints
                 try
                 {
                     var checkoutUrl = await checkoutService.CreateDonationSessionAsync(
-                        request.AmountEuro,
+                        decimal.ToInt32(amountCents),
                         cancellationToken);
                     return TypedResults.Ok(new CreateDonationCheckoutResponse(checkoutUrl.ToString()));
                 }

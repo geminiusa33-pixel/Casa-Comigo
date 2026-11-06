@@ -4,5 +4,5 @@ public interface IStripeCheckoutService
 {
     bool IsConfigured { get; }
     IReadOnlyList<string> MissingSettings { get; }
-    Task<Uri> CreateDonationSessionAsync(int amountEuro, CancellationToken cancellationToken);
+    Task<Uri> CreateDonationSessionAsync(int amountCents, CancellationToken cancellationToken);
 }

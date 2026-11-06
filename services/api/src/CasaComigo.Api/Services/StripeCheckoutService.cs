@@ -30,7 +30,7 @@ public sealed class StripeCheckoutService(
     }
 
     public async Task<Uri> CreateDonationSessionAsync(
-        int amountEuro,
+        int amountCents,
         CancellationToken cancellationToken)
     {
         if (!IsConfigured || !TryGetFrontendUri(_frontendBaseUrl, out var frontendUri))
@@ -50,7 +50,7 @@ public sealed class StripeCheckoutService(
             new KeyValuePair<string, string>("allowed_payment_method_types[1]", "mb_way"),
             new KeyValuePair<string, string>("allowed_payment_method_types[2]", "multibanco"),
             new KeyValuePair<string, string>("line_items[0][price_data][currency]", "eur"),
-            new KeyValuePair<string, string>("line_items[0][price_data][unit_amount]", (amountEuro * 100).ToString()),
+            new KeyValuePair<string, string>("line_items[0][price_data][unit_amount]", amountCents.ToString()),
             new KeyValuePair<string, string>("line_items[0][price_data][product_data][name]", "Apoio ao Divide Casa Comigo"),
             new KeyValuePair<string, string>("line_items[0][quantity]", "1"),
             new KeyValuePair<string, string>("metadata[purpose]", "donation")

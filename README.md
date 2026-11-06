@@ -131,7 +131,7 @@ Nunca coloques a API key em `services/web/.env.local`, em `VITE_*`, no Git ou no
 
 ### Donativos opcionais com Stripe Checkout
 
-Os botões de apoio criam sessões de Stripe Checkout na API, para valores fixos de 3 €, 5 € ou 10 €. A chave secreta Stripe é usada exclusivamente no backend; nunca a coloques no frontend, em variáveis `VITE_*`, no Git ou no chat.
+Os botões de apoio criam sessões de Stripe Checkout na API, para valores de 1 €, 2 € ou 3 €, ou um valor personalizado entre 0,50 € e 20,00 €, com até duas casas decimais. A chave secreta Stripe é usada exclusivamente no backend; nunca a coloques no frontend, em variáveis `VITE_*`, no Git ou no chat.
 
 Para testar localmente, usa primeiro uma chave de teste (`sk_test_...`) e guarda-a nos User Secrets do projeto da API:
 
