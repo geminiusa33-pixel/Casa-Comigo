@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf9f5"/>
+      <stop offset="1" stop-color="#e8eee4"/>
+    </linearGradient>
+    <linearGradient id="portrait" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9b7a0"/>
+      <stop offset="1" stop-color="#82927b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <circle cx="1070" cy="80" r="220" fill="#dfe8d9" opacity=".58"/>
+  <circle cx="65" cy="620" r="250" fill="#eee7d9" opacity=".7"/>
+  <g transform="translate(78 69)">
+    <rect width="52" height="52" rx="16" fill="#315d48"/>
+    <path d="m10 25 16-13 16 13v17a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2z" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.2"/>
+    <path d="M22 44V31h9v13" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.2"/>
+    <text x="68" y="34" fill="#20372d" font-family="Arial, sans-serif" font-size="25" font-weight="700">Divide Casa Comigo</text>
+  </g>
+  <g transform="translate(82 183)">
+    <circle cx="8" cy="9" r="5" fill="#78936d"/>
+    <text x="25" y="16" fill="#58745e" font-family="Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="2">UMA FORMA MAIS HUMANA DE ENCONTRAR CASA</text>
+    <text x="0" y="91" fill="#20372d" font-family="Georgia, serif" font-size="45">Encontrar casa começa</text>
+    <text x="0" y="153" fill="#20372d" font-family="Georgia, serif" font-size="45">por encontrar <tspan fill="#315d48" font-style="italic">as pessoas certas.</tspan></text>
+    <text x="2" y="211" fill="#58675d" font-family="Arial, sans-serif" font-size="22">Encontra pessoas compatíveis para partilhar casa,</text>
+    <text x="2" y="245" fill="#58675d" font-family="Arial, sans-serif" font-size="22">na tua zona e ao teu ritmo.</text>
+    <g transform="translate(0 296)">
+      <rect width="248" height="52" rx="13" fill="#315d48"/>
+      <text x="124" y="33" fill="#fff" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700">Pessoas antes das paredes</text>
+    </g>
+    <g transform="translate(0 389)" fill="#58745e" font-family="Arial, sans-serif" font-size="16">
+      <circle cx="6" cy="5" r="5" fill="#78936d"/>
+      <text x="21" y="10">A tua localização exata permanece privada</text>
+    </g>
+  </g>
+  <g transform="translate(744 116) rotate(3 174 225)">
+    <rect x="14" y="20" width="340" height="410" rx="26" fill="#20372d" opacity=".12"/>
+    <rect width="340" height="410" rx="26" fill="#fff" stroke="#e4e6dc" stroke-width="2"/>
+    <rect x="14" y="14" width="312" height="185" rx="19" fill="url(#portrait)"/>
+    <circle cx="170" cy="81" r="43" fill="#f3d9c3" opacity=".92"/>
+    <path d="M104 185c7-46 30-70 66-70s59 24 66 70" fill="#315d48" opacity=".92"/>
+    <path d="M133 74c2-31 18-51 42-51 28 0 44 21 41 54-13-3-24-14-31-26-12 15-31 23-52 23" fill="#503d35"/>
+    <text x="25" y="238" fill="#20372d" font-family="Arial, sans-serif" font-size="22" font-weight="700">Mariana, 27</text>
+    <text x="25" y="269" fill="#65746a" font-family="Arial, sans-serif" font-size="16">Lisboa · zona de procura</text>
+    <text x="25" y="309" fill="#43574a" font-family="Arial, sans-serif" font-size="16">Cozinhar, plantas e domingos</text>
+    <text x="25" y="332" fill="#43574a" font-family="Arial, sans-serif" font-size="16">sem pressa.</text>
+    <g transform="translate(25 355)">
+      <rect width="128" height="31" rx="15" fill="#edf1e9"/>
+      <text x="64" y="21" fill="#315d48" text-anchor="middle" font-family="Arial, sans-serif" font-size="13">Rotinas tranquilas</text>
+    </g>
+  </g>
+  <g transform="translate(819 503)">
+    <rect width="282" height="74" rx="19" fill="#fff" stroke="#e4e6dc" stroke-width="2"/>
+    <circle cx="39" cy="37" r="22" fill="#e7d0bc"/>
+    <path d="M18 45c3-14 10-22 21-22s18 8 21 22" fill="#a96c54"/>
+    <text x="75" y="34" fill="#20372d" font-family="Arial, sans-serif" font-size="17" font-weight="700">Rui, 30</text>
+    <text x="75" y="55" fill="#65746a" font-family="Arial, sans-serif" font-size="13">Também procura em Lisboa</text>
+    <circle cx="249" cy="37" r="17" fill="#f8e9e4"/>
+    <path d="M249 45s-10-6-10-13a5 5 0 0 1 10-2 5 5 0 0 1 10 2c0 7-10 13-10 13" fill="#b46b5b"/>
+  </g>
+</svg>
