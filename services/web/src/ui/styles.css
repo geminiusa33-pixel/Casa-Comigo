@@ -207,6 +207,23 @@ button, input { font: inherit; }
   color: #638064;
 }
 
+.landing-about-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.landing-about-actions .fui-Button {
+  min-width: 0;
+  min-height: 36px;
+  padding-inline: 9px;
+  border-radius: 8px;
+  color: #49624e;
+  font-size: 11px;
+  white-space: normal;
+}
+
 .landing-visual {
   position: relative;
   min-height: 465px;
@@ -879,9 +896,13 @@ button, input { font: inherit; }
   .landing-top-banner .landing-donation-options { grid-template-columns: 1fr; }
   .landing-banner-dismiss { top: 5px; right: 5px; }
   .landing-story-overlay { padding: 16px; }
-  .landing-story-dialog { max-height: 92vh; padding: 48px 24px 28px; border-radius: 17px; }
-  .landing-story-dialog h2 { font-size: clamp(30px, 9vw, 40px); }
-  .landing-story-dialog p { font-size: 13px; }
+  .landing-story-dialog { max-height: min(82dvh, 680px); padding: 44px 20px 24px; border-radius: 17px; }
+  .landing-story-dialog h2 { margin: 8px 0 12px; font-size: clamp(27px, 8vw, 35px); }
+  .landing-story-dialog p { font-size: 12px; line-height: 1.65; }
+  .landing-story-dialog p:not(.landing-story-signature) + p:not(.landing-story-signature) { margin-top: 12px; }
+  .landing-story-dialog .landing-story-signature { margin-top: 13px; }
+  .landing-about-actions { gap: 5px; }
+  .landing-about-actions .fui-Button { min-height: 40px; }
 
   .landing-principles {
     justify-content: flex-start;

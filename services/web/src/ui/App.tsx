@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  Badge,
   Button,
   Card,
   makeStyles,
@@ -124,8 +123,8 @@ export function App() {
   const [, setUnreadNotifications] = useState(0);
   const [notificationGroupId, setNotificationGroupId] = useState<string | null>(null);
   const [profileSavedNotice, setProfileSavedNotice] = useState(false);
-  const [showStoryBanner, setShowStoryBanner] = useState(true);
-  const [showSupportBanner, setShowSupportBanner] = useState(true);
+  const [showStoryBanner, setShowStoryBanner] = useState(false);
+  const [showSupportBanner, setShowSupportBanner] = useState(false);
   const currentLabel = navItems.find((item) => item.value === selected)?.label ?? "Descobrir";
   const updateOwnPhotoPath = useCallback((photoPath: string | null) => setOwnPhotoPath(photoPath), []);
 
@@ -248,8 +247,10 @@ export function App() {
           onSignIn={() => setAuthMode("sign-in")}
           onSignUp={() => setAuthMode("sign-up")}
           showStoryBanner={showStoryBanner}
+          onOpenStoryBanner={() => setShowStoryBanner(true)}
           onDismissStoryBanner={() => setShowStoryBanner(false)}
           showSupportBanner={showSupportBanner}
+          onOpenSupportBanner={() => setShowSupportBanner(true)}
           onDismissSupportBanner={() => setShowSupportBanner(false)}
         />
       );
@@ -274,8 +275,10 @@ export function App() {
         onProfile={() => setSelected("perfil")}
         onSignOut={() => void signOut()}
         showStoryBanner={showStoryBanner}
+        onOpenStoryBanner={() => setShowStoryBanner(true)}
         onDismissStoryBanner={() => setShowStoryBanner(false)}
         showSupportBanner={showSupportBanner}
+        onOpenSupportBanner={() => setShowSupportBanner(true)}
         onDismissSupportBanner={() => setShowSupportBanner(false)}
       />
     );
@@ -297,7 +300,6 @@ export function App() {
           <Text className={styles.brandName} size={400}>Divide Casa Comigo</Text>
         </Button>
         <div className={styles.topActions}>
-          <Badge className="member-environment" appearance="tint" color="success">Ambiente local</Badge>
           <NotificationsBell
             session={session}
             onUnreadCountChange={setUnreadNotifications}

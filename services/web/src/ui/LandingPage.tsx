@@ -22,8 +22,10 @@ type Props = {
   onProfile?: () => void;
   onSignOut?: () => void;
   showStoryBanner?: boolean;
+  onOpenStoryBanner?: () => void;
   onDismissStoryBanner?: () => void;
   showSupportBanner?: boolean;
+  onOpenSupportBanner?: () => void;
   onDismissSupportBanner?: () => void;
 };
 
@@ -53,12 +55,14 @@ export function LandingPage({
   onProfile,
   onSignOut,
   showStoryBanner,
+  onOpenStoryBanner,
   onDismissStoryBanner,
   showSupportBanner,
+  onOpenSupportBanner,
   onDismissSupportBanner,
 }: Props) {
-  const [localStoryOpen, setLocalStoryOpen] = useState(true);
-  const [localSupportOpen, setLocalSupportOpen] = useState(true);
+  const [localStoryOpen, setLocalStoryOpen] = useState(false);
+  const [localSupportOpen, setLocalSupportOpen] = useState(false);
   const storyCloseButton = useRef<HTMLButtonElement>(null);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -170,6 +174,16 @@ export function LandingPage({
     onDismissSupportBanner?.();
   }
 
+  function openStory() {
+    setLocalStoryOpen(true);
+    onOpenStoryBanner?.();
+  }
+
+  function openSupport() {
+    setLocalSupportOpen(true);
+    onOpenSupportBanner?.();
+  }
+
   return (
     <div className="landing">
       {storyOpen && createPortal(
@@ -208,8 +222,7 @@ export function LandingPage({
               acessível e vida familiar.
             </p>
             <p className="landing-story-signature">
-              A plataforma é gratuita nesta fase. Se quiseres apoiar o projeto,{" "}
-              <a href="#apoio" onClick={dismissStory}>podes pagar um café</a>.
+              A plataforma é gratuita nesta fase. Se quiseres apoiar o projeto, usa o botão “Apoiar”.
             </p>
           </section>
         </div>,
@@ -223,7 +236,15 @@ export function LandingPage({
         <nav className="landing-nav" aria-label="Navegação da página">
           <a href="#como-funciona">Como funciona</a>
           <a href="#privacidade">A nossa abordagem</a>
-          <a href="#apoio">Apoiar</a>
+          <a
+            href="#apoio"
+            onClick={(event) => {
+              event.preventDefault();
+              openSupport();
+            }}
+          >
+            Apoiar
+          </a>
         </nav>
         <div className="landing-header-actions">
           {authenticated ? (
@@ -337,6 +358,14 @@ export function LandingPage({
             <div className="landing-trust-line">
               <ShieldCheckmark24Regular />
               <span>A tua localização exata permanece privada.</span>
+            </div>
+            <div className="landing-about-actions">
+              <Button appearance="subtle" onClick={openStory}>
+                Porque criei esta plataforma?
+              </Button>
+              <Button appearance="secondary" onClick={openSupport}>
+                Apoiar
+              </Button>
             </div>
           </div>
 
